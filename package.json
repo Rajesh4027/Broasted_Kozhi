@@ -1,0 +1,85 @@
+{
+  "name": "bk-billing",
+  "version": "1.0.0",
+  "description": "Brosted Kozhi Billing Desktop Software",
+  "author": "Brosted Kozhi",
+  "private": true,
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "electron:start": "electron .",
+    "electron:build": "vite build && electron-builder",
+    "electron:build:nsis": "vite build && electron-builder --win nsis",
+    "electron:build:portable": "vite build && electron-builder --win portable"
+  },
+  "build": {
+    "appId": "com.brostedkozhi.billing",
+    "productName": "Brosted Kozhi Billing",
+    "copyright": "Copyright © 2026 Brosted Kozhi",
+    "directories": {
+      "output": "release"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Rajesh4027",
+      "repo": "Broasted_Kozhi"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "win": {
+      "executableName": "BrostedKozhiBilling",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "public/favicon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Brosted Kozhi Billing",
+      "uninstallDisplayName": "Brosted Kozhi Billing App",
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^1.41.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "autoprefixer": "^10.5.5",
+    "electron": "^44.6.0",
+    "electron-builder": "^26.15.3",
+    "oxlint": "^1.79.0",
+    "postcss": "^8.5.28",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.2"
+  }
+}
