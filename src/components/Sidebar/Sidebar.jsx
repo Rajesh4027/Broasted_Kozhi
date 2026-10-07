@@ -177,14 +177,14 @@ export default function Sidebar({
                   title={item.label}
                   className={`w-full flex items-center gap-3 py-3 px-4 text-sm font-medium transition-all duration-200 border-l-[4px] ${
                     isActive
-                      ? 'bg-[#333333] text-white border-[#6366f1] font-semibold'
+                      ? 'bg-[#333333] text-white border-bk-red font-semibold'
                       : 'border-transparent text-[#b0b0b0] hover:text-white hover:bg-[#2e2e2e]'
                   } ${!showTextLabels ? 'justify-center px-0' : ''}`}
                 >
                   <IconComponent
                     size={20}
                     className={`shrink-0 ${
-                      isActive ? 'text-[#818cf8]' : 'text-gray-400'
+                      isActive ? 'text-bk-gold' : 'text-gray-400'
                     }`}
                   />
 
