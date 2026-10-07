@@ -7,6 +7,23 @@ const ORDERS_KEY = 'bk_orders_v1';
 const COUNTER_KEY = 'bk_invoice_counter_v1';
 const SETTINGS_KEY = 'bk_settings_v1';
 const MENU_KEY = 'bk_menu_categories_v1';
+const STAFF_KEY = 'bk_staff_list_v1';
+
+export const INITIAL_STAFF = [
+  { id: 'st-1', name: 'Admin Manager', role: 'Store Manager', shift: 'Morning Shift', status: 'Active', phone: '9865644549', email: 'admin@brostedkozhi.com', ordersHandled: 142 },
+  { id: 'st-2', name: 'Rahul Sharma', role: 'Head Cashier', shift: 'Morning Shift', status: 'Active', phone: '9876543210', email: 'rahul@brostedkozhi.com', ordersHandled: 89 },
+  { id: 'st-3', name: 'Priya Verma', role: 'Counter Assistant', shift: 'Evening Shift', status: 'On Leave', phone: '9845123789', email: 'priya@brostedkozhi.com', ordersHandled: 54 },
+  { id: 'st-4', name: 'Vikram Singh', role: 'Kitchen Chief', shift: 'All Day', status: 'Active', phone: '9789012345', email: 'vikram@brostedkozhi.com', ordersHandled: 210 },
+];
+
+function loadStaff() {
+  try {
+    const raw = localStorage.getItem(STAFF_KEY);
+    return raw ? JSON.parse(raw) : INITIAL_STAFF;
+  } catch {
+    return INITIAL_STAFF;
+  }
+}
 
 export const DEFAULT_SETTINGS = {
   storeName: 'Broasted Kozhi',
@@ -95,6 +112,7 @@ export function BillingProvider({ children }) {
   const [orders, setOrders] = useState(loadOrders);
   const [storeSettings, setStoreSettings] = useState(loadSettings);
   const [categories, setCategories] = useState(loadCategories);
+  const [staffList, setStaffList] = useState(loadStaff);
 
   useEffect(() => {
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
@@ -116,6 +134,50 @@ export function BillingProvider({ children }) {
       window.electronAPI.writeFileData('menu.json', categories);
     }
   }, [categories]);
+
+  useEffect(() => {
+    localStorage.setItem(STAFF_KEY, JSON.stringify(staffList));
+    if (window.electronAPI?.writeFileData) {
+      window.electronAPI.writeFileData('staff.json', staffList);
+    }
+  }, [staffList]);
+
+  const addStaffMember = useCallback((newStaff) => {
+    const staffObj = {
+      id: `st-${Date.now()}`,
+      name: newStaff.name,
+      role: newStaff.role || 'Counter Assistant',
+      shift: newStaff.shift || 'Morning Shift',
+      status: newStaff.status || 'Active',
+      phone: newStaff.phone || '',
+      email: newStaff.email || '',
+      ordersHandled: 0,
+      createdAt: new Date().toISOString()
+    };
+    setStaffList((prev) => [staffObj, ...prev]);
+  }, []);
+
+  const updateStaffMember = useCallback((id, updatedFields) => {
+    setStaffList((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updatedFields } : s))
+    );
+  }, []);
+
+  const deleteStaffMember = useCallback((id) => {
+    setStaffList((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const toggleStaffStatus = useCallback((id) => {
+    setStaffList((prev) =>
+      prev.map((s) => {
+        if (s.id === id) {
+          const nextStatus = s.status === 'Active' ? 'On Leave' : 'Active';
+          return { ...s, status: nextStatus };
+        }
+        return s;
+      })
+    );
+  }, []);
 
   const exportBackup = useCallback(async () => {
     const backupObj = {
@@ -324,6 +386,11 @@ export function BillingProvider({ children }) {
     deleteCategory,
     exportBackup,
     importBackup,
+    staffList,
+    addStaffMember,
+    updateStaffMember,
+    deleteStaffMember,
+    toggleStaffStatus,
   };
 
   return <BillingContext.Provider value={value}>{children}</BillingContext.Provider>;
