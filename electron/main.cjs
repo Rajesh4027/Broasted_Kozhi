@@ -133,15 +133,18 @@ ipcMain.handle('check-for-updates', async () => {
   try {
     if (!app.isPackaged) {
       return {
-        available: true,
-        version: '1.1.0',
-        releaseNotes: 'New Features:\n• Advanced Analytics Dashboard\n• High-Speed Thermal Receipt Printing\n• Automatic Windows AppData Data Protection'
+        available: false,
+        version: '1.2.0',
+        releaseNotes: 'Running in development mode.'
       };
     }
     const result = await autoUpdater.checkForUpdates();
+    const currentVersion = app.getVersion();
+    const remoteVersion = result?.updateInfo?.version;
+    const available = !!remoteVersion && remoteVersion !== currentVersion;
     return {
-      available: !!result?.updateInfo,
-      version: result?.updateInfo?.version || '1.0.0',
+      available,
+      version: remoteVersion || currentVersion,
       releaseNotes: result?.updateInfo?.releaseNotes || 'Performance improvements and security updates.'
     };
   } catch (err) {

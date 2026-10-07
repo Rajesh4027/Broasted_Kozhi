@@ -17,6 +17,15 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [backupMsg, setBackupMsg] = useState('');
+  const [currentAppVersion, setCurrentAppVersion] = useState('1.1.0');
+
+  useEffect(() => {
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then((v) => {
+        if (v) setCurrentAppVersion(v);
+      });
+    }
+  }, []);
 
   const handleExportBackup = async () => {
     const res = await exportBackup();
@@ -253,7 +262,7 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
             <div className="flex items-center justify-between p-3.5 bg-bk-cream/70 rounded-xl border border-bk-gold/30">
               <div>
                 <p className="text-xs font-bold text-bk-charcoal">Installed Software Version</p>
-                <p className="text-[11px] text-gray-500">Brosted Kozhi Billing v1.0.0 (Windows x64)</p>
+                <p className="text-[11px] text-gray-500">Brosted Kozhi Billing v{currentAppVersion} (Windows x64)</p>
               </div>
               <span className="text-xs font-extrabold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full border border-emerald-300 flex items-center gap-1">
                 <CheckCircle2 size={13} /> Active
@@ -266,12 +275,14 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
                 if (window.electronAPI?.checkForUpdates) {
                   const res = await window.electronAPI.checkForUpdates();
                   if (res?.available) {
-                    alert(`New Version Available: v${res.version}!\nCheck top-right banner to update.`);
+                    alert(`🎉 New Version Available: v${res.version}!\n\nClick "Update Now" on the notification popup to update automatically.`);
+                  } else if (res?.error) {
+                    alert(`Unable to check for updates: ${res.error}\nPlease check your internet connection.`);
                   } else {
-                    alert('You are running the latest version (v1.0.0).');
+                    alert(`You are running the latest version (v${currentAppVersion}).`);
                   }
                 } else {
-                  alert('You are running the latest version (v1.0.0).');
+                  alert(`You are running the latest version (v${currentAppVersion}).`);
                 }
               }}
               className="w-full flex items-center justify-center gap-2 bg-bk-red hover:bg-bk-red-dark text-white font-extrabold text-xs py-3 px-4 rounded-xl shadow-md transition active:scale-95"

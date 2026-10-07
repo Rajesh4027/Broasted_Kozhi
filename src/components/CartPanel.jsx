@@ -6,10 +6,21 @@ import {
 import { useBilling } from '../context/BillingContext';
 
 export default function CartPanel({ onGenerateInvoice }) {
-  const { cart, updateQty, removeFromCart, clearCart, cartTotal, cartCount, isCartOpen, setIsCartOpen } = useBilling();
+  const {
+    cart,
+    updateQty,
+    removeFromCart,
+    clearCart,
+    cartTotal,
+    cartCount,
+    isCartOpen,
+    setIsCartOpen,
+    customerName,
+    setCustomerName,
+    customerPhone,
+    setCustomerPhone,
+  } = useBilling();
   const [paymentMode, setPaymentMode] = useState('Cash');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
 
   const handleProceed = () => {
     if (cart.length === 0) return;

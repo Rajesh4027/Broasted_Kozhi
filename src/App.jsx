@@ -4,6 +4,7 @@ import ItemsGrid from './components/ItemsGrid';
 import CartPanel from './components/CartPanel';
 import InvoiceModal from './components/InvoiceModal';
 import LiveOrdersPage from './components/LiveOrders/LiveOrdersPage';
+import InsightsPage from './components/Insights/InsightsPage';
 import MenuInventoryPage from './components/MenuInventory/MenuInventoryPage';
 import StaffManagementPage from './components/StaffManagement/StaffManagementPage';
 import SettingsPage from './components/Settings/SettingsPage';
@@ -72,6 +73,7 @@ function AppShell({ onLogout }) {
             onLogout={onLogout}
             onToggleSidebar={handleToggleSidebar}
             collapsed={collapsed}
+            onViewOrder={setInvoiceOrder}
           />
           <CartPanel onGenerateInvoice={handleGenerateInvoice} />
         </>
@@ -79,6 +81,14 @@ function AppShell({ onLogout }) {
 
       {activeView === 'orders' && (
         <LiveOrdersPage
+          onViewOrder={setInvoiceOrder}
+          onToggleSidebar={handleToggleSidebar}
+          collapsed={collapsed}
+        />
+      )}
+
+      {activeView === 'insights' && (
+        <InsightsPage
           onViewOrder={setInvoiceOrder}
           onToggleSidebar={handleToggleSidebar}
           collapsed={collapsed}
@@ -127,7 +137,6 @@ export default function App() {
 
   return (
     <BillingProvider>
-      <UpdateNotification />
       <AppShell onLogout={handleLogout} />
     </BillingProvider>
   );

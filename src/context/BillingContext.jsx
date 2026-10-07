@@ -39,12 +39,172 @@ Theni (Dt).`,
   footerNote: 'Thank you for visiting Broasted Kozhi! Come back soon!',
 };
 
+export const INITIAL_ORDERS = [
+  {
+    invoiceNo: 1001,
+    date: '2026-10-07T13:30:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '9842155670',
+    items: [
+      { key: 'item-1', name: '4 Pcs Broasted Chicken', variant: 'Full', unitPrice: 420, qty: 1 },
+      { key: 'item-2', name: 'Tropical Delight', variant: 'Regular', unitPrice: 99, qty: 2 }
+    ],
+    subtotal: 618,
+    total: 618
+  },
+  {
+    invoiceNo: 1002,
+    date: '2026-10-06T19:15:00.000Z',
+    paymentMode: 'Cash',
+    customerName: 'Priya Sundaram',
+    customerPhone: '9789456123',
+    items: [
+      { key: 'item-3', name: 'BK Special Fried Bird', variant: 'Full Bird', unitPrice: 480, qty: 1 },
+      { key: 'item-4', name: 'Loaded Cheese Fries', variant: 'Large', unitPrice: 160, qty: 1 }
+    ],
+    subtotal: 640,
+    total: 640
+  },
+  {
+    invoiceNo: 1003,
+    date: '2026-10-06T14:10:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '9842155670',
+    items: [
+      { key: 'item-5', name: 'Zinger Crispy Burger', variant: 'Single', unitPrice: 149, qty: 2 },
+      { key: 'item-6', name: 'Mint Mojito', variant: 'Regular', unitPrice: 89, qty: 2 }
+    ],
+    subtotal: 476,
+    total: 476
+  },
+  {
+    invoiceNo: 1004,
+    date: '2026-10-05T20:45:00.000Z',
+    paymentMode: 'Card',
+    customerName: 'Karthik Raja',
+    customerPhone: '9845123987',
+    items: [
+      { key: 'item-1', name: '4 Pcs Broasted Chicken', variant: 'Full', unitPrice: 420, qty: 2 },
+      { key: 'item-7', name: 'Bluecuraco', variant: 'Regular', unitPrice: 89, qty: 2 }
+    ],
+    subtotal: 1018,
+    total: 1018
+  },
+  {
+    invoiceNo: 1005,
+    date: '2026-10-05T13:00:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '9842155670',
+    items: [
+      { key: 'item-8', name: 'Chicken Crispy Wrap', variant: 'Single', unitPrice: 139, qty: 1 },
+      { key: 'item-2', name: 'Tropical Delight', variant: 'Regular', unitPrice: 99, qty: 1 }
+    ],
+    subtotal: 238,
+    total: 238
+  },
+  {
+    invoiceNo: 1006,
+    date: '2026-10-04T18:20:00.000Z',
+    paymentMode: 'Cash',
+    customerName: 'Anand V',
+    customerPhone: '9944112233',
+    items: [
+      { key: 'item-9', name: 'Steam Chicken Momos (6 Pcs)', variant: 'Plate', unitPrice: 120, qty: 2 },
+      { key: 'item-10', name: 'Pinacolada', variant: 'Regular', unitPrice: 99, qty: 1 }
+    ],
+    subtotal: 339,
+    total: 339
+  },
+  {
+    invoiceNo: 1007,
+    date: '2026-10-03T21:00:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Priya Sundaram',
+    customerPhone: '9789456123',
+    items: [
+      { key: 'item-1', name: '4 Pcs Broasted Chicken', variant: 'Full', unitPrice: 420, qty: 1 },
+      { key: 'item-6', name: 'Mint Mojito', variant: 'Regular', unitPrice: 89, qty: 2 }
+    ],
+    subtotal: 598,
+    total: 598
+  },
+  {
+    invoiceNo: 1008,
+    date: '2026-10-02T12:45:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '9842155670',
+    items: [
+      { key: 'item-3', name: 'BK Special Fried Bird', variant: 'Full Bird', unitPrice: 480, qty: 1 },
+      { key: 'item-7', name: 'Bluecuraco', variant: 'Regular', unitPrice: 89, qty: 1 }
+    ],
+    subtotal: 569,
+    total: 569
+  },
+  {
+    invoiceNo: 1009,
+    date: '2026-10-01T20:10:00.000Z',
+    paymentMode: 'Cash',
+    customerName: 'Karthik Raja',
+    customerPhone: '9845123987',
+    items: [
+      { key: 'item-5', name: 'Zinger Crispy Burger', variant: 'Single', unitPrice: 149, qty: 3 },
+      { key: 'item-4', name: 'Loaded Cheese Fries', variant: 'Large', unitPrice: 160, qty: 1 }
+    ],
+    subtotal: 607,
+    total: 607
+  },
+  {
+    invoiceNo: 1010,
+    date: '2026-09-28T19:30:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Devi M',
+    customerPhone: '9655887711',
+    items: [
+      { key: 'item-8', name: 'Chicken Crispy Wrap', variant: 'Single', unitPrice: 139, qty: 2 }
+    ],
+    subtotal: 278,
+    total: 278
+  },
+  {
+    invoiceNo: 1011,
+    date: '2026-09-25T14:15:00.000Z',
+    paymentMode: 'Cash',
+    customerName: 'Suresh Kumar',
+    customerPhone: '9443211009',
+    items: [
+      { key: 'item-11', name: 'Chocolate Milkshake', variant: 'Regular', unitPrice: 110, qty: 2 },
+      { key: 'item-12', name: 'Peri Peri Wings (6 Pcs)', variant: 'Plate', unitPrice: 180, qty: 1 }
+    ],
+    subtotal: 400,
+    total: 400
+  },
+  {
+    invoiceNo: 1012,
+    date: '2026-09-20T20:00:00.000Z',
+    paymentMode: 'UPI',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '9842155670',
+    items: [
+      { key: 'item-1', name: '4 Pcs Broasted Chicken', variant: 'Full', unitPrice: 420, qty: 1 },
+      { key: 'item-6', name: 'Mint Mojito', variant: 'Regular', unitPrice: 89, qty: 1 }
+    ],
+    subtotal: 509,
+    total: 509
+  }
+];
+
 function loadOrders() {
   try {
     const raw = localStorage.getItem(ORDERS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return INITIAL_ORDERS;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_ORDERS;
   } catch {
-    return [];
+    return INITIAL_ORDERS;
   }
 }
 
@@ -113,6 +273,10 @@ export function BillingProvider({ children }) {
   const [storeSettings, setStoreSettings] = useState(loadSettings);
   const [categories, setCategories] = useState(loadCategories);
   const [staffList, setStaffList] = useState(loadStaff);
+
+  // Active POS Customer state (voice & UI sync)
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
 
   useEffect(() => {
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
@@ -371,6 +535,10 @@ export function BillingProvider({ children }) {
     cartCount,
     isCartOpen,
     setIsCartOpen,
+    customerName,
+    setCustomerName,
+    customerPhone,
+    setCustomerPhone,
     orders,
     finalizeOrder,
     deleteOrder,

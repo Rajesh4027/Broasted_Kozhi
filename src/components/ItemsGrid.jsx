@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import { Plus, Search, X, LogOut, AlertCircle, ChevronLeft, ChevronRight, ShoppingCart, Menu } from 'lucide-react';
 import { useBilling } from '../context/BillingContext';
+import VoiceAssistant from './VoiceBilling/VoiceAssistant';
+import UpdateNotification from './UpdateNotification';
 
 const VARIANTS = ['Normal', 'Nashville', 'Korean'];
 
-export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout, onToggleSidebar, collapsed }) {
+export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout, onToggleSidebar, collapsed, onViewOrder }) {
   const { addToCart, categories, cartCount, cartTotal, setIsCartOpen } = useBilling();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
@@ -110,8 +112,14 @@ export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout,
           </div>
         </div>
 
-        {/* Top Right Action Group: View Order + Logout */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        {/* Top Right Action Group: Update Icon + Voice AI + View Order + Logout */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Software Update Button */}
+          <UpdateNotification />
+
+          {/* AI Voice Assistant Button */}
+          <VoiceAssistant onViewOrder={onViewOrder} />
+
           {/* View Order Button */}
           <button
             onClick={() => setIsCartOpen((v) => !v)}

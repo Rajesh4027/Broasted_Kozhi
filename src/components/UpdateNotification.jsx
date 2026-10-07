@@ -1,64 +1,77 @@
-import { useState, useEffect } from 'react';
-import { Sparkles, Download, RefreshCw, X, CheckCircle2, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Sparkles, Download, RefreshCw, X, CheckCircle2, ArrowRight, ShieldCheck, Zap, AlertCircle } from 'lucide-react';
 
 export default function UpdateNotification() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
-  const [isDismissed, setIsDismissed] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [checking, setChecking] = useState(false);
 
-  // Updating modal states
-  const [isUpdatingModalOpen, setIsUpdatingModalOpen] = useState(false);
+  // Updating states
+  const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState(0);
-  const [updateStage, setUpdateStage] = useState('downloading'); // 'downloading' | 'applying' | 'ready' | 'error'
+  const [isReadyToRestart, setIsReadyToRestart] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const dropdownRef = useRef(null);
+  const [installedVersion, setInstalledVersion] = useState('1.3.0');
+
   useEffect(() => {
-    // Check for update automatically when app starts
-    if (window.electronAPI?.checkForUpdates) {
-      window.electronAPI.checkForUpdates().then((res) => {
-        if (res?.available) {
-          setUpdateAvailable(true);
-          setUpdateInfo(res);
-        }
+    if (window.electronAPI?.getAppVersion) {
+      window.electronAPI.getAppVersion().then((ver) => {
+        if (ver) setInstalledVersion(ver);
       });
-    } else {
-      // Demo mode for browser preview / local testing
-      const timer = setTimeout(() => {
-        setUpdateAvailable(true);
-        setUpdateInfo({
-          version: '1.1.0',
-          releaseNotes: '• Advanced Analytics Dashboard\n• Thermal Printer Speed Optimization\n• Automatic Windows AppData Data Protection'
-        });
-      }, 4000);
-      return () => clearTimeout(timer);
     }
   }, []);
 
+  // Check for updates on mount
+  const checkUpdates = async () => {
+    setChecking(true);
+    setErrorMessage('');
+    if (window.electronAPI?.checkForUpdates) {
+      try {
+        const res = await window.electronAPI.checkForUpdates();
+        if (res?.available) {
+          setUpdateAvailable(true);
+          setUpdateInfo(res);
+        } else {
+          setUpdateAvailable(false);
+        }
+      } catch (err) {
+        console.warn('Update check error:', err);
+      } finally {
+        setChecking(false);
+      }
+    } else {
+      setTimeout(() => {
+        setChecking(false);
+      }, 800);
+    }
+  };
+
+  useEffect(() => {
+    checkUpdates();
+  }, []);
+
+  // Listen to IPC events from main process
   useEffect(() => {
     if (!window.electronAPI) return;
 
     const cleanupProgress = window.electronAPI.onUpdateProgress?.((data) => {
+      setIsDownloading(true);
       const p = Math.round(data.percent || 0);
       setDownloadProgress(p);
-      if (p >= 90 && updateStage === 'downloading') {
-        setUpdateStage('applying');
-      }
     });
 
     const cleanupDownloaded = window.electronAPI.onUpdateDownloaded?.((info) => {
+      setIsDownloading(false);
       setDownloadProgress(100);
-      setUpdateStage('ready');
-      // Auto restart after 2 seconds
-      setTimeout(() => {
-        if (window.electronAPI?.restartAndInstall) {
-          window.electronAPI.restartAndInstall();
-        }
-      }, 2500);
+      setIsReadyToRestart(true);
     });
 
     const cleanupError = window.electronAPI.onUpdateError?.((err) => {
-      setUpdateStage('error');
-      setErrorMessage(typeof err === 'string' ? err : 'Update failed to install.');
+      setIsDownloading(false);
+      setErrorMessage(typeof err === 'string' ? err : 'Update failed.');
     });
 
     return () => {
@@ -66,37 +79,45 @@ export default function UpdateNotification() {
       if (cleanupDownloaded) cleanupDownloaded();
       if (cleanupError) cleanupError();
     };
-  }, [updateStage]);
+  }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleStartUpdate = () => {
-    setIsDismissed(true);
-    setIsUpdatingModalOpen(true);
-    setUpdateStage('downloading');
+    setIsDownloading(true);
     setDownloadProgress(0);
+    setErrorMessage('');
 
     if (window.electronAPI?.startDownloadUpdate) {
       window.electronAPI.startDownloadUpdate();
     } else {
-      // Simulated animation for browser preview mode
+      // Browser preview demo simulation
       let currentP = 0;
       const interval = setInterval(() => {
-        currentP += 12;
-        if (currentP >= 80 && currentP < 100) {
-          setUpdateStage('applying');
-        }
+        currentP += 15;
         if (currentP >= 100) {
           currentP = 100;
           clearInterval(interval);
           setDownloadProgress(100);
-          setUpdateStage('ready');
+          setIsDownloading(false);
+          setIsReadyToRestart(true);
         } else {
           setDownloadProgress(currentP);
         }
-      }, 500);
+      }, 400);
     }
   };
 
-  const handleManualRestart = () => {
+  const handleRestart = () => {
     if (window.electronAPI?.restartAndInstall) {
       window.electronAPI.restartAndInstall();
     } else {
@@ -105,162 +126,168 @@ export default function UpdateNotification() {
   };
 
   return (
-    <>
-      {/* ── Top Right Corner Update Notification Banner ── */}
-      {updateAvailable && !isDismissed && (
-        <div className="fixed top-4 right-4 z-50 max-w-sm w-full bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-bk-red/30 p-4 font-sans text-bk-charcoal animate-bounce-short">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-bk-red text-white flex items-center justify-center shadow-md shadow-bk-red/30 shrink-0">
-                <Sparkles size={20} className="animate-pulse" />
+    <div className="relative inline-block" ref={dropdownRef}>
+      {/* ── Header Icon Button (Placed Left of AI Voice) ── */}
+      <button
+        onClick={() => setIsDropdownOpen((v) => !v)}
+        title="Software Updates & Release Notes"
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-extrabold shadow-sm transition-all duration-300 active:scale-95 border ${
+          isReadyToRestart
+            ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-400 animate-bounce'
+            : isDownloading
+            ? 'bg-amber-500 text-white border-amber-400'
+            : updateAvailable
+            ? 'bg-red-50 text-bk-red border-red-300 hover:bg-bk-red hover:text-white'
+            : 'bg-bk-cream text-bk-charcoal/80 border-bk-gold/40 hover:border-bk-gold hover:bg-white'
+        }`}
+      >
+        <div className="relative flex items-center justify-center">
+          {isDownloading ? (
+            <RefreshCw size={16} className="animate-spin text-white" />
+          ) : isReadyToRestart ? (
+            <CheckCircle2 size={16} className="text-white" />
+          ) : checking ? (
+            <RefreshCw size={16} className="animate-spin text-bk-gold-dark" />
+          ) : (
+            <Sparkles size={16} className={updateAvailable ? 'animate-pulse text-bk-red' : 'text-bk-gold-dark'} />
+          )}
+
+          {updateAvailable && !isDownloading && !isReadyToRestart && (
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-bk-red border-2 border-white animate-ping" />
+          )}
+        </div>
+
+        <span className="hidden sm:inline font-extrabold">
+          {isReadyToRestart
+            ? 'Restart App'
+            : isDownloading
+            ? `${downloadProgress}%`
+            : updateAvailable
+            ? `Update v${updateInfo?.version || '1.2.0'}`
+            : `v${installedVersion}`}
+        </span>
+      </button>
+
+      {/* ── Dropdown Popover ── */}
+      {isDropdownOpen && (
+        <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-3xl p-4 shadow-2xl border border-bk-gold/30 z-50 animate-fadeSlideUp font-sans text-bk-charcoal">
+          {/* Popover Header */}
+          <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${
+                isReadyToRestart ? 'bg-emerald-600' : updateAvailable ? 'bg-bk-red' : 'bg-[#282828]'
+              }`}>
+                {isReadyToRestart ? <CheckCircle2 size={18} /> : <Sparkles size={18} />}
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-extrabold text-sm text-bk-charcoal">New Update Available!</span>
-                  <span className="text-[10px] font-bold bg-bk-gold/20 text-bk-red px-2 py-0.5 rounded-full border border-bk-gold/40">
-                    v{updateInfo?.version || '1.1.0'}
-                  </span>
-                </div>
-                <p className="text-[11px] text-gray-500 mt-0.5">
-                  A fresh software update with new features is ready for installation.
+                <h4 className="text-sm font-extrabold text-bk-charcoal leading-tight">Software Updates</h4>
+                <p className="text-[11px] text-gray-500">
+                  Installed: <span className="font-bold text-bk-charcoal">v{installedVersion}</span>
                 </p>
               </div>
             </div>
 
             <button
-              onClick={() => setIsDismissed(true)}
-              className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-gray-100 transition"
-              title="Dismiss"
+              onClick={() => setIsDropdownOpen(false)}
+              className="p-1 rounded-lg text-gray-400 hover:text-bk-charcoal hover:bg-gray-100 transition"
             >
               <X size={16} />
             </button>
           </div>
 
-          {updateInfo?.releaseNotes && (
-            <div className="mt-2.5 p-2.5 bg-bk-cream/70 rounded-xl border border-bk-gold/20 text-[11px] text-bk-charcoal/80 whitespace-pre-line leading-relaxed max-h-24 overflow-y-auto">
-              {updateInfo.releaseNotes}
-            </div>
-          )}
-
-          <div className="mt-3 flex items-center gap-2">
-            <button
-              onClick={handleStartUpdate}
-              className="flex-1 flex items-center justify-center gap-2 bg-bk-red hover:bg-bk-red-dark text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-md transition active:scale-95 group"
-            >
-              <Download size={14} className="group-hover:translate-y-0.5 transition" />
-              <span>Update Now</span>
-              <ArrowRight size={14} className="group-hover:translate-x-0.5 transition" />
-            </button>
-
-            <button
-              onClick={() => setIsDismissed(true)}
-              className="text-xs font-bold text-gray-500 hover:text-gray-700 px-3 py-2 rounded-xl hover:bg-gray-100 transition"
-            >
-              Later
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── Updating Progress & Finishing Animation Modal Overlay ── */}
-      {isUpdatingModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl border border-bk-gold/30 max-w-md w-full p-6 text-center space-y-6 animate-scaleUp">
-            
-            {/* Header Animation Icon */}
-            <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
-              {updateStage === 'downloading' && (
-                <div className="relative w-full h-full flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full border-4 border-bk-red/20 animate-ping" />
-                  <div className="w-16 h-16 rounded-2xl bg-bk-red text-white flex items-center justify-center shadow-lg shadow-bk-red/30">
-                    <Download size={32} className="animate-bounce" />
-                  </div>
+          {/* Body Content */}
+          <div className="py-3 space-y-3">
+            {isReadyToRestart ? (
+              <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-center space-y-2">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center mx-auto shadow-md">
+                  <CheckCircle2 size={24} className="animate-bounce" />
                 </div>
-              )}
-
-              {updateStage === 'applying' && (
-                <div className="w-16 h-16 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30">
-                  <Zap size={32} className="animate-pulse" />
+                <h5 className="font-extrabold text-sm text-emerald-900">Update Installed &amp; Ready!</h5>
+                <p className="text-xs text-emerald-700">Restart the software now to apply version v{updateInfo?.version || '1.2.0'} changes.</p>
+              </div>
+            ) : isDownloading ? (
+              <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+                <div className="flex justify-between items-center text-xs font-bold text-amber-900">
+                  <span>Downloading GitHub Release...</span>
+                  <span className="font-mono text-sm">{downloadProgress}%</span>
                 </div>
-              )}
-
-              {updateStage === 'ready' && (
-                <div className="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 scale-110 transition">
-                  <CheckCircle2 size={36} className="animate-bounce" />
-                </div>
-              )}
-
-              {updateStage === 'error' && (
-                <div className="w-16 h-16 rounded-2xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/30">
-                  <X size={36} />
-                </div>
-              )}
-            </div>
-
-            {/* Status Titles */}
-            <div className="space-y-1">
-              <h2 className="text-xl font-extrabold text-bk-charcoal">
-                {updateStage === 'downloading' && 'Downloading Software Update...'}
-                {updateStage === 'applying' && 'Applying Updates & Verifying Files...'}
-                {updateStage === 'ready' && 'Update Complete! Restarting Software...'}
-                {updateStage === 'error' && 'Update Interrupted'}
-              </h2>
-
-              <p className="text-xs text-gray-500">
-                {updateStage === 'downloading' && 'Please keep the application open. Fetching package files.'}
-                {updateStage === 'applying' && 'Installing new features and patching core files.'}
-                {updateStage === 'ready' && 'Brosted Kozhi Billing is restarting to apply changes.'}
-                {updateStage === 'error' && (errorMessage || 'An error occurred during update.')}
-              </p>
-            </div>
-
-            {/* Animated Progress Bar */}
-            {updateStage !== 'error' && (
-              <div className="space-y-2">
-                <div className="flex justify-between items-center text-xs font-extrabold">
-                  <span className="text-bk-charcoal/70 flex items-center gap-1.5">
-                    <ShieldCheck size={14} className="text-emerald-600" />
-                    {updateStage === 'downloading' && 'Downloading Assets'}
-                    {updateStage === 'applying' && 'Patching Binaries'}
-                    {updateStage === 'ready' && 'Ready for Launch'}
-                  </span>
-                  <span className="text-bk-red font-mono text-sm">{downloadProgress}%</span>
-                </div>
-
-                <div className="w-full h-3 bg-bk-cream rounded-full overflow-hidden border border-bk-gold/30 p-0.5 relative">
+                <div className="w-full h-2.5 bg-amber-200/60 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-bk-gold via-bk-red to-bk-red-dark rounded-full transition-all duration-300 relative overflow-hidden"
+                    className="h-full bg-amber-500 rounded-full transition-all duration-300"
                     style={{ width: `${downloadProgress}%` }}
-                  >
-                    {/* Animated shine line */}
-                    <div className="absolute inset-0 bg-white/30 animate-pulse" />
-                  </div>
+                  />
                 </div>
+                <p className="text-[10px] text-amber-700 text-center font-medium">Please wait while downloading update package.</p>
+              </div>
+            ) : updateAvailable ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-bk-red bg-red-50 px-2 py-0.5 rounded-md border border-red-200">
+                    🚀 New Release Available: v{updateInfo?.version || '1.2.0'}
+                  </span>
+                </div>
+                {updateInfo?.releaseNotes && (
+                  <div className="p-2.5 bg-bk-cream/70 rounded-xl border border-bk-gold/20 text-xs text-bk-charcoal/80 whitespace-pre-line leading-relaxed max-h-28 overflow-y-auto">
+                    {updateInfo.releaseNotes}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-2xl border border-gray-200 text-center space-y-1">
+                <ShieldCheck size={24} className="text-emerald-600 mx-auto" />
+                <p className="font-bold text-xs text-bk-charcoal">Software is Up-to-Date</p>
+                <p className="text-[11px] text-gray-400">You are running the latest v{installedVersion} release.</p>
               </div>
             )}
 
-            {/* Action buttons on finish or error */}
-            {updateStage === 'ready' && (
-              <button
-                onClick={handleManualRestart}
-                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3 px-4 rounded-xl shadow-lg transition active:scale-95"
-              >
-                <RefreshCw size={18} className="animate-spin" />
-                <span>Restart Now</span>
-              </button>
+            {errorMessage && (
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-1.5">
+                <AlertCircle size={14} className="shrink-0" />
+                <span className="truncate">{errorMessage}</span>
+              </div>
             )}
+          </div>
 
-            {updateStage === 'error' && (
+          {/* Footer Action Buttons */}
+          <div className="pt-2 border-t border-gray-100 flex items-center justify-between gap-2">
+            {isReadyToRestart ? (
               <button
-                onClick={() => setIsUpdatingModalOpen(false)}
-                className="w-full bg-bk-charcoal hover:bg-black text-white font-bold text-sm py-2.5 px-4 rounded-xl transition"
+                onClick={handleRestart}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-md transition active:scale-95"
               >
-                Close
+                <RefreshCw size={14} className="animate-spin" />
+                <span>Restart &amp; Install Now</span>
+              </button>
+            ) : isDownloading ? (
+              <button
+                disabled
+                className="w-full bg-gray-200 text-gray-500 font-bold text-xs py-2.5 px-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={14} className="animate-spin" />
+                <span>Downloading ({downloadProgress}%)</span>
+              </button>
+            ) : updateAvailable ? (
+              <button
+                onClick={handleStartUpdate}
+                className="w-full flex items-center justify-center gap-2 bg-bk-red hover:bg-bk-red-dark text-white font-extrabold text-xs py-2.5 px-4 rounded-xl shadow-md transition active:scale-95 group"
+              >
+                <Download size={14} className="group-hover:translate-y-0.5 transition" />
+                <span>Update Now</span>
+                <ArrowRight size={14} className="group-hover:translate-x-0.5 transition" />
+              </button>
+            ) : (
+              <button
+                onClick={checkUpdates}
+                disabled={checking}
+                className="w-full flex items-center justify-center gap-2 bg-[#282828] hover:bg-black text-white font-extrabold text-xs py-2.5 px-4 rounded-xl transition active:scale-95"
+              >
+                <RefreshCw size={14} className={checking ? 'animate-spin' : ''} />
+                <span>{checking ? 'Checking GitHub...' : 'Check GitHub Updates'}</span>
               </button>
             )}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
