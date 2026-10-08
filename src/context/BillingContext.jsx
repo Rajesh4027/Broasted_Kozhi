@@ -366,7 +366,7 @@ export function BillingProvider({ children }) {
 
   const exportBackup = useCallback(async () => {
     const backupObj = {
-      appName: 'Brosted Kozhi Billing',
+      appName: 'Broasted Kozhi Billing',
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
       orders,
@@ -380,7 +380,7 @@ export function BillingProvider({ children }) {
       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj, null, 2));
       const downloadAnchor = document.createElement('a');
       downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `BrostedKozhi_Backup_${new Date().toISOString().slice(0, 10)}.json`);
+      downloadAnchor.setAttribute("download", `BroastedKozhi_Backup_${new Date().toISOString().slice(0, 10)}.json`);
       document.body.appendChild(downloadAnchor);
       downloadAnchor.click();
       downloadAnchor.remove();

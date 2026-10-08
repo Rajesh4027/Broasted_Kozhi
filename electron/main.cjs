@@ -22,7 +22,7 @@ function createWindow() {
     height: 850,
     minWidth: 1024,
     minHeight: 700,
-    title: 'Brosted Kozhi Billing Web App',
+    title: 'Broasted Kozhi Bill Hub',
     icon: path.join(__dirname, '../public/favicon.png'),
     webPreferences: {
       nodeIntegration: false,
@@ -90,7 +90,7 @@ ipcMain.handle('write-file-data', async (event, filename, data) => {
 
 ipcMain.handle('export-data-backup', async (event, dataJson) => {
   try {
-    const defaultName = `BrostedKozhi_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+    const defaultName = `BroastedKozhi_Backup_${new Date().toISOString().slice(0, 10)}.json`;
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Backup Data',
       defaultPath: path.join(app.getPath('documents'), defaultName),

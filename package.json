@@ -1,8 +1,8 @@
 {
   "name": "bk-billing",
-  "version": "1.5.0",
-  "description": "Brosted Kozhi Billing Desktop Software",
-  "author": "Brosted Kozhi",
+  "version": "1.6.0",
+  "description": "Broasted Kozhi Bill Hub Desktop Software",
+  "author": "Broasted Kozhi",
   "private": true,
   "type": "module",
   "main": "electron/main.cjs",
@@ -17,9 +17,9 @@
     "electron:build:portable": "vite build && electron-builder --win portable"
   },
   "build": {
-    "appId": "com.brostedkozhi.billing",
-    "productName": "Brosted Kozhi Billing",
-    "copyright": "Copyright © 2026 Brosted Kozhi",
+    "appId": "com.broastedkozhi.billhub",
+    "productName": "Broasted Kozhi Bill Hub",
+    "copyright": "Copyright © 2026 Broasted Kozhi",
     "directories": {
       "output": "release"
     },
@@ -33,7 +33,7 @@
       "electron/**/*"
     ],
     "win": {
-      "executableName": "BrostedKozhiBilling",
+      "executableName": "BroastedKozhiBillHub",
       "target": [
         {
           "target": "nsis",
@@ -55,8 +55,8 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Brosted Kozhi Billing",
-      "uninstallDisplayName": "Brosted Kozhi Billing App",
+      "shortcutName": "Broasted Kozhi Bill Hub",
+      "uninstallDisplayName": "Broasted Kozhi Bill Hub App",
       "deleteAppDataOnUninstall": false
     }
   },
