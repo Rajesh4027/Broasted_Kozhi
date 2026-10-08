@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Trash2, Minus, Plus, ReceiptText, X,
-  ShoppingCart, ArrowRight, Pencil,
+  ShoppingCart, ArrowRight, Pencil, Phone, User, Check, AlertCircle
 } from 'lucide-react';
 import { useBilling } from '../context/BillingContext';
 
@@ -21,11 +21,149 @@ export default function CartPanel({ onGenerateInvoice }) {
     setCustomerPhone,
     editingOrder,
     cancelEditOrder,
+    orders,
   } = useBilling();
+
   const [paymentMode, setPaymentMode] = useState('Cash');
+  const [activeDropdown, setActiveDropdown] = useState(null); // 'phone' | 'name' | null
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const containerRef = useRef(null);
+
+  // Extract unique saved customers from live & past orders
+  const savedCustomers = useMemo(() => {
+    const map = new Map();
+    (orders || []).forEach((o) => {
+      const phone = (o.customerPhone || '').toString().trim();
+      const name = (o.customerName || '').toString().trim();
+      if (phone || name) {
+        const key = phone || name;
+        if (!map.has(key) || (name && !map.get(key).name)) {
+          map.set(key, { phone, name });
+        }
+      }
+    });
+    return Array.from(map.values());
+  }, [orders]);
+
+  // Look up existing registered customer for current phone number
+  const existingCustomerForPhone = useMemo(() => {
+    if (!customerPhone || !customerPhone.trim()) return null;
+    const phone = customerPhone.trim();
+    return savedCustomers.find(
+      (c) => c.phone && c.phone.trim() === phone && c.name && c.name.trim() !== ''
+    );
+  }, [savedCustomers, customerPhone]);
+
+  // Check if typed customerName conflicts with existing registered name for this phone number
+  const isNameMismatch = useMemo(() => {
+    if (!existingCustomerForPhone || !customerName || !customerName.trim()) return false;
+    return (
+      existingCustomerForPhone.name.trim().toLowerCase() !==
+      customerName.trim().toLowerCase()
+    );
+  }, [existingCustomerForPhone, customerName]);
+
+  // Check if current phone & name already match a saved customer fully
+  const isFullySelectedCustomer = useMemo(() => {
+    if (!customerPhone || !customerPhone.trim()) return false;
+    const phone = customerPhone.trim();
+    const name = (customerName || '').trim().toLowerCase();
+    return savedCustomers.some(
+      (c) => c.phone.trim() === phone && (c.name || '').trim().toLowerCase() === name
+    );
+  }, [savedCustomers, customerPhone, customerName]);
+
+  // Filter for Phone Input — ONLY show when user starts typing & not fully selected
+  const phoneFilteredCustomers = useMemo(() => {
+    if (!customerPhone || !customerPhone.trim() || isFullySelectedCustomer) {
+      return [];
+    }
+    const qPhone = customerPhone.trim().toLowerCase();
+    const qName = customerName ? customerName.trim().toLowerCase() : '';
+
+    return savedCustomers.filter((c) => {
+      const phoneMatch = c.phone && c.phone.toLowerCase().includes(qPhone);
+      if (!phoneMatch) return false;
+
+      // If user already typed a customer name, only suggest if name also matches
+      if (qName) {
+        return c.name && c.name.toLowerCase().includes(qName);
+      }
+      return true;
+    });
+  }, [savedCustomers, customerPhone, customerName, isFullySelectedCustomer]);
+
+  // Filter for Name Input — ONLY show when user starts typing & not fully selected
+  const nameFilteredCustomers = useMemo(() => {
+    if (!customerName || !customerName.trim() || isFullySelectedCustomer) {
+      return [];
+    }
+    const qName = customerName.trim().toLowerCase();
+    const qPhone = customerPhone ? customerPhone.trim() : '';
+
+    return savedCustomers.filter((c) => {
+      const nameMatch = c.name && c.name.toLowerCase().includes(qName);
+      if (!nameMatch) return false;
+
+      // If user already typed a phone number, only suggest if phone also matches
+      if (qPhone) {
+        return c.phone && c.phone.trim().includes(qPhone);
+      }
+      return true;
+    });
+  }, [savedCustomers, customerName, customerPhone, isFullySelectedCustomer]);
+
+  const currentFilteredList = activeDropdown === 'phone' ? phoneFilteredCustomers : nameFilteredCustomers;
+
+  // Keyboard navigation handler (Up/Down Arrow & Enter)
+  const handleKeyDown = (e) => {
+    if (!activeDropdown || currentFilteredList.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev < currentFilteredList.length - 1 ? prev + 1 : 0));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : currentFilteredList.length - 1));
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      if (highlightedIndex >= 0 && currentFilteredList[highlightedIndex]) {
+        e.preventDefault();
+        handleSelectCustomer(currentFilteredList[highlightedIndex]);
+      }
+    } else if (e.key === 'Escape') {
+      setActiveDropdown(null);
+      setHighlightedIndex(-1);
+    }
+  };
+
+  const handleSelectCustomer = (cust) => {
+    setCustomerPhone(cust.phone || '');
+    setCustomerName(cust.name || '');
+    setActiveDropdown(null);
+    setHighlightedIndex(-1);
+  };
+
+  const handleClearCustomer = () => {
+    setCustomerPhone('');
+    setCustomerName('');
+    setActiveDropdown(null);
+    setHighlightedIndex(-1);
+  };
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        setActiveDropdown(null);
+        setHighlightedIndex(-1);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleProceed = () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || isNameMismatch) return;
     onGenerateInvoice({ paymentMode, customerName, customerPhone });
     setCustomerName('');
     setCustomerPhone('');
@@ -155,30 +293,201 @@ export default function CartPanel({ onGenerateInvoice }) {
         {/* Footer — Payment + Proceed */}
         {cart.length > 0 && (
           <div className="border-t border-bk-gold/30 p-4 space-y-3 bg-white shrink-0">
-            {/* Customer Details: Name & Phone */}
-            <div className="space-y-2">
-              <input
-                value={customerName}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  const capitalized = val.replace(/\b\w/g, (c) => c.toUpperCase());
-                  setCustomerName(capitalized);
-                }}
-                placeholder="Customer Name"
-                autoCapitalize="words"
-                autoCorrect="off"
-                className="w-full text-xs sm:text-sm border border-bk-gold/40 rounded-xl px-3.5 py-2.5 outline-none focus:border-bk-red focus:ring-2 focus:ring-bk-red/20 transition bg-bk-cream font-medium"
-              />
-              <input
-                type="tel"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value.replace(/\D/g, ''))}
-                placeholder="Contact No"
-                maxLength={15}
-                inputMode="numeric"
-                pattern="[0-9]*"
-                className="w-full text-xs sm:text-sm border border-bk-gold/40 rounded-xl px-3.5 py-2.5 outline-none focus:border-bk-red focus:ring-2 focus:ring-bk-red/20 transition bg-bk-cream font-medium"
-              />
+            {/* Customer Details: Contact No (1st) & Customer Name (2nd) */}
+            <div className="space-y-2 relative" ref={containerRef}>
+              {/* 1. Contact No Input with Autocomplete */}
+              <div className="relative">
+                <div className="relative flex items-center">
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      setCustomerPhone(val);
+                      setActiveDropdown('phone');
+                      setHighlightedIndex(-1);
+                    }}
+                    onFocus={() => {
+                      if (customerPhone.trim() && !isFullySelectedCustomer) {
+                        setActiveDropdown('phone');
+                        setHighlightedIndex(-1);
+                      }
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Contact No"
+                    maxLength={15}
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    className={`w-full text-xs sm:text-sm border rounded-xl px-3.5 py-2.5 outline-none transition bg-bk-cream font-medium pr-8 ${
+                      isNameMismatch
+                        ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200'
+                        : 'border-bk-gold/40 focus:border-bk-red focus:ring-2 focus:ring-bk-red/20'
+                    }`}
+                  />
+                  {(customerPhone || customerName) && (
+                    <button
+                      type="button"
+                      onClick={handleClearCustomer}
+                      className="absolute right-2.5 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/60 transition"
+                      title="Clear customer details"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Phone Dropdown List */}
+                {activeDropdown === 'phone' && phoneFilteredCustomers.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-bk-gold/30 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-100 animate-fadeSlideUp">
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-amber-50/70 flex items-center justify-between border-b border-gray-100 sticky top-0">
+                      <span>Saved Customers ({phoneFilteredCustomers.length})</span>
+                      <span className="text-[9px] text-bk-red font-semibold">↑↓ Arrow & Enter to select</span>
+                    </div>
+                    {phoneFilteredCustomers.map((cust, idx) => {
+                      const isSelected = idx === highlightedIndex;
+                      return (
+                        <button
+                          key={`phone-${cust.phone}-${idx}`}
+                          type="button"
+                          onClick={() => handleSelectCustomer(cust)}
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                          className={`w-full text-left px-3.5 py-2 flex items-center justify-between group transition ${
+                            isSelected
+                              ? 'bg-amber-100 border-l-4 border-bk-red text-bk-red font-bold'
+                              : 'hover:bg-bk-cream'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition ${
+                              isSelected ? 'bg-bk-red text-white' : 'bg-bk-gold/10 text-bk-gold'
+                            }`}>
+                              <Phone size={12} />
+                            </div>
+                            <span className={`text-xs ${isSelected ? 'font-extrabold text-bk-red' : 'font-bold text-bk-charcoal'}`}>
+                              {cust.phone || 'No Phone'}
+                            </span>
+                          </div>
+                          {cust.name ? (
+                            <span className={`text-xs px-2 py-0.5 rounded-md transition ${
+                              isSelected ? 'bg-bk-red text-white font-bold' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {cust.name}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-gray-400 italic">No Name</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* 2. Customer Name Input with Autocomplete */}
+              <div className="relative">
+                <div className="relative flex items-center">
+                  <input
+                    value={customerName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const capitalized = val.replace(/\b\w/g, (c) => c.toUpperCase());
+                      setCustomerName(capitalized);
+                      setActiveDropdown('name');
+                      setHighlightedIndex(-1);
+                    }}
+                    onFocus={() => {
+                      if (customerName.trim() && !isFullySelectedCustomer) {
+                        setActiveDropdown('name');
+                        setHighlightedIndex(-1);
+                      }
+                    }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Customer Name"
+                    autoCapitalize="words"
+                    autoCorrect="off"
+                    className={`w-full text-xs sm:text-sm border rounded-xl px-3.5 py-2.5 outline-none transition bg-bk-cream font-medium pr-8 ${
+                      isNameMismatch
+                        ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-200 ring-2 ring-red-100'
+                        : 'border-bk-gold/40 focus:border-bk-red focus:ring-2 focus:ring-bk-red/20'
+                    }`}
+                  />
+                  {(customerName || customerPhone) && (
+                    <button
+                      type="button"
+                      onClick={handleClearCustomer}
+                      className="absolute right-2.5 text-gray-400 hover:text-gray-600 p-0.5 rounded-full hover:bg-gray-200/60 transition"
+                      title="Clear customer details"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Name Dropdown List */}
+                {activeDropdown === 'name' && nameFilteredCustomers.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-bk-gold/30 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-gray-100 animate-fadeSlideUp">
+                    <div className="px-3 py-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-amber-50/70 flex items-center justify-between border-b border-gray-100 sticky top-0">
+                      <span>Matching Customers ({nameFilteredCustomers.length})</span>
+                      <span className="text-[9px] text-bk-red font-semibold">↑↓ Arrow & Enter to select</span>
+                    </div>
+                    {nameFilteredCustomers.map((cust, idx) => {
+                      const isSelected = idx === highlightedIndex;
+                      return (
+                        <button
+                          key={`name-${cust.name}-${idx}`}
+                          type="button"
+                          onClick={() => handleSelectCustomer(cust)}
+                          onMouseEnter={() => setHighlightedIndex(idx)}
+                          className={`w-full text-left px-3.5 py-2 flex items-center justify-between group transition ${
+                            isSelected
+                              ? 'bg-amber-100 border-l-4 border-bk-red text-bk-red font-bold'
+                              : 'hover:bg-bk-cream'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center transition ${
+                              isSelected ? 'bg-bk-red text-white' : 'bg-bk-gold/10 text-bk-gold'
+                            }`}>
+                              <User size={12} />
+                            </div>
+                            <span className={`text-xs ${isSelected ? 'font-extrabold text-bk-red' : 'font-bold text-bk-charcoal'}`}>
+                              {cust.name || 'No Name'}
+                            </span>
+                          </div>
+                          {cust.phone ? (
+                            <span className={`text-xs px-2 py-0.5 rounded-md transition ${
+                              isSelected ? 'bg-bk-red text-white font-bold' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {cust.phone}
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-gray-400 italic">No Phone</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Name Mismatch Warning Alert */}
+              {isNameMismatch && (
+                <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl p-2.5 font-semibold animate-fadeSlideUp">
+                  <AlertCircle size={16} className="shrink-0 text-red-500 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="leading-tight">
+                      Phone <span className="font-bold">{customerPhone}</span> is already registered to <span className="font-bold underline">{existingCustomerForPhone.name}</span>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setCustomerName(existingCustomerForPhone.name)}
+                      className="mt-1 text-[11px] text-red-700 hover:text-white bg-white hover:bg-red-600 border border-red-300 px-2 py-0.5 rounded-md font-bold transition shadow-xs flex items-center gap-1"
+                    >
+                      <span>Use "{existingCustomerForPhone.name}"</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Payment mode */}
@@ -211,8 +520,13 @@ export default function CartPanel({ onGenerateInvoice }) {
             {/* Proceed to Bill button */}
             <button
               onClick={handleProceed}
+              disabled={isNameMismatch}
               className={`w-full text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
-                editingOrder ? 'bg-amber-600 hover:bg-amber-700' : 'bg-bk-red hover:bg-bk-red-dark'
+                isNameMismatch
+                  ? 'bg-gray-400 cursor-not-allowed opacity-70'
+                  : editingOrder
+                  ? 'bg-amber-600 hover:bg-amber-700'
+                  : 'bg-bk-red hover:bg-bk-red-dark'
               }`}
             >
               {editingOrder ? `Update & Save Bill (#${editingOrder.invoiceNo})` : 'Proceed to Bill'}

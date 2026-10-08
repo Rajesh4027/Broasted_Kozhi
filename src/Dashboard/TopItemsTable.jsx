@@ -4,13 +4,14 @@ import { useBilling } from '../context/BillingContext';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
 
-export default function TopItemsTable() {
-  const { orders } = useBilling();
+export default function TopItemsTable({ ordersProp }) {
+  const { orders: allOrders } = useBilling();
+  const ordersToUse = ordersProp !== undefined ? ordersProp : allOrders;
 
   const topItems = useMemo(() => {
     const map = {};
-    orders.forEach((o) => {
-      o.items.forEach((it) => {
+    ordersToUse.forEach((o) => {
+      (o.items || []).forEach((it) => {
         const k = it.name;
         if (!map[k]) map[k] = { name: it.name, qty: 0, revenue: 0 };
         map[k].qty += it.qty;
@@ -20,7 +21,7 @@ export default function TopItemsTable() {
     return Object.values(map)
       .sort((a, b) => b.qty - a.qty)
       .slice(0, 8);
-  }, [orders]);
+  }, [ordersToUse]);
 
   const maxQty = topItems[0]?.qty || 1;
 

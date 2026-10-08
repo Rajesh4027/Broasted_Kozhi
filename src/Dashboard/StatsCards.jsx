@@ -30,25 +30,21 @@ function StatCard({ icon: Icon, label, value, sub, accent, delay }) {
   );
 }
 
-export default function StatsCards() {
-  const { orders } = useBilling();
+export default function StatsCards({ ordersProp, timeFilter = 'Today' }) {
+  const { orders: allOrders } = useBilling();
+  const ordersToUse = ordersProp !== undefined ? ordersProp : allOrders;
 
   const stats = useMemo(() => {
     const todayStr = new Date().toDateString();
-    const totalRevenue = orders.reduce((s, o) => s + o.total, 0);
-    const todayRevenue = orders
+    const totalRevenue = ordersToUse.reduce((s, o) => s + o.total, 0);
+    const todayRevenue = allOrders
       .filter((o) => new Date(o.date).toDateString() === todayStr)
       .reduce((s, o) => s + o.total, 0);
-    const totalOrders = orders.length;
+    const totalOrders = ordersToUse.length;
     const avg = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
-    // This week orders
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-    const weekOrders = orders.filter((o) => new Date(o.date) >= weekAgo).length;
-
-    return { totalRevenue, todayRevenue, totalOrders, avg, weekOrders };
-  }, [orders]);
+    return { totalRevenue, todayRevenue, totalOrders, avg };
+  }, [ordersToUse, allOrders]);
 
   const fmt = (n) =>
     n >= 1000
@@ -59,9 +55,9 @@ export default function StatsCards() {
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       <StatCard
         icon={IndianRupee}
-        label="Total Revenue"
+        label={timeFilter === 'All Time' ? 'Total Revenue' : `${timeFilter} Revenue`}
         value={fmt(stats.totalRevenue)}
-        sub={`${stats.totalOrders} orders all-time`}
+        sub={`${stats.totalOrders} order${stats.totalOrders !== 1 ? 's' : ''} in ${timeFilter}`}
         accent="#E4212B"
         delay="0ms"
       />
@@ -75,9 +71,9 @@ export default function StatsCards() {
       />
       <StatCard
         icon={ShoppingBag}
-        label="Total Orders"
+        label="Filtered Orders"
         value={stats.totalOrders.toLocaleString()}
-        sub={`${stats.weekOrders} this week`}
+        sub={`Period: ${timeFilter}`}
         accent="#2A1B1B"
         delay="120ms"
       />
@@ -85,7 +81,7 @@ export default function StatsCards() {
         icon={BarChart2}
         label="Avg Order Value"
         value={fmt(stats.avg)}
-        sub="Per transaction"
+        sub="Per transaction in period"
         accent="#7C3AED"
         delay="180ms"
       />

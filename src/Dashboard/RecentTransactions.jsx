@@ -7,9 +7,10 @@ const MODE_STYLE = {
   Card: 'bg-purple-100 text-purple-700',
 };
 
-export default function RecentTransactions({ onView }) {
-  const { orders } = useBilling();
-  const recent = orders.slice(0, 5);
+export default function RecentTransactions({ onView, ordersProp }) {
+  const { orders: allOrders } = useBilling();
+  const ordersToUse = ordersProp !== undefined ? ordersProp : allOrders;
+  const recent = ordersToUse.slice(0, 5);
 
   return (
     <div

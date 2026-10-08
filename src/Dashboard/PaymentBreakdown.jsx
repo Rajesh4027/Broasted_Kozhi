@@ -17,20 +17,21 @@ function describeArc(cx, cy, r, startAngle, endAngle) {
   return `M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}`;
 }
 
-export default function PaymentBreakdown() {
-  const { orders } = useBilling();
+export default function PaymentBreakdown({ ordersProp }) {
+  const { orders: allOrders } = useBilling();
+  const ordersToUse = ordersProp !== undefined ? ordersProp : allOrders;
 
   const data = useMemo(() => {
     const counts = { Cash: 0, UPI: 0, Card: 0 };
     const totals = { Cash: 0, UPI: 0, Card: 0 };
-    orders.forEach((o) => {
+    ordersToUse.forEach((o) => {
       const mode = o.paymentMode || 'Cash';
       if (mode in counts) {
         counts[mode]++;
         totals[mode] += o.total;
       }
     });
-    const totalOrders = orders.length || 1;
+    const totalOrders = ordersToUse.length || 1;
     return Object.keys(counts).map((key) => ({
       label: key,
       count: counts[key],
@@ -38,7 +39,7 @@ export default function PaymentBreakdown() {
       pct: Math.round((counts[key] / totalOrders) * 100),
       color: PAYMENT_COLORS[key],
     }));
-  }, [orders]);
+  }, [ordersToUse]);
 
   // Build donut segments
   const R_OUTER = 56;

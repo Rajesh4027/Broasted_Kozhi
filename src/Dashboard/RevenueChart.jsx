@@ -16,12 +16,39 @@ function getLastNDays(n) {
   return days;
 }
 
-export default function RevenueChart() {
-  const { orders } = useBilling();
+export default function RevenueChart({ ordersProp, timeFilter = 'Today' }) {
+  const { orders: allOrders } = useBilling();
+  const ordersToUse = ordersProp !== undefined ? ordersProp : allOrders;
 
   const days = useMemo(() => {
+    if (timeFilter === 'Today') {
+      const slots = [];
+      for (let h = 9; h <= 22; h += 2) {
+        const hour12 = h % 12 === 0 ? 12 : h % 12;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        slots.push({
+          label: `${hour12}${ampm}`,
+          hourStart: h,
+          hourEnd: h + 2,
+          key: `hour-${h}`,
+          revenue: 0,
+          orders: 0,
+        });
+      }
+      ordersToUse.forEach((o) => {
+        const d = new Date(o.date);
+        const hr = d.getHours();
+        const slot = slots.find((s) => hr >= s.hourStart && hr < s.hourEnd);
+        if (slot) {
+          slot.revenue += o.total;
+          slot.orders += 1;
+        }
+      });
+      return slots;
+    }
+
     const slots = getLastNDays(7);
-    orders.forEach((o) => {
+    ordersToUse.forEach((o) => {
       const key = new Date(o.date).toDateString();
       const slot = slots.find((s) => s.key === key);
       if (slot) {
@@ -30,7 +57,7 @@ export default function RevenueChart() {
       }
     });
     return slots;
-  }, [orders]);
+  }, [ordersToUse, timeFilter]);
 
   const maxRev = Math.max(...days.map((d) => d.revenue), 1);
 
@@ -55,8 +82,12 @@ export default function RevenueChart() {
     <div className="bg-white rounded-2xl p-5 shadow-sm animate-fadeSlideUp" style={{ animationDelay: '240ms' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="font-bold text-bk-charcoal text-base">Revenue — Last 7 Days</h3>
-          <p className="text-xs text-gray-400 mt-0.5">Daily sales overview</p>
+          <h3 className="font-bold text-bk-charcoal text-base">
+            Revenue — {timeFilter === 'Today' ? "Today's Hourly Sales" : timeFilter}
+          </h3>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {timeFilter === 'Today' ? 'Hourly distribution for today' : 'Sales overview for period'}
+          </p>
         </div>
         <span className="text-xs bg-bk-red/10 text-bk-red font-semibold px-3 py-1 rounded-full">
           ₹{days.reduce((s, d) => s + d.revenue, 0).toLocaleString('en-IN')} total

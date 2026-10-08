@@ -32,12 +32,23 @@ export default function InsightsPage({ onViewOrder, onToggleSidebar, collapsed }
   const { orders, categories } = useBilling();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('all'); // 'all' | 'month' | 'week' | 'today'
+  const [selectedTimeframe, setSelectedTimeframe] = useState('today'); // 'today' | 'week' | 'month' | 'all' | 'custom'
+  const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+
   const [activeTab, setActiveTab] = useState('customers'); // 'customers' | 'dishes' | 'habits'
   const [customerFilter, setCustomerFilter] = useState('all'); // 'all' | 'vip' | 'regular' | 'new' | 'dormant'
   const [selectedCustomer, setSelectedCustomer] = useState(null);
 
   const now = new Date();
+
+  // Reset filter back to default (Today)
+  const handleResetTimeframe = () => {
+    setSelectedTimeframe('today');
+    const todayStr = new Date().toISOString().split('T')[0];
+    setStartDate(todayStr);
+    setEndDate(todayStr);
+  };
 
   // ── 1. Filter Orders by Timeframe ──
   const filteredOrders = useMemo(() => {
@@ -53,6 +64,7 @@ export default function InsightsPage({ onViewOrder, onToggleSidebar, collapsed }
       }
       if (selectedTimeframe === 'week') {
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        sevenDaysAgo.setHours(0, 0, 0, 0);
         return oDate >= sevenDaysAgo;
       }
       if (selectedTimeframe === 'month') {
@@ -61,9 +73,16 @@ export default function InsightsPage({ onViewOrder, onToggleSidebar, collapsed }
           oDate.getFullYear() === now.getFullYear()
         );
       }
+      if (selectedTimeframe === 'custom') {
+        const start = startDate ? new Date(startDate) : new Date(0);
+        start.setHours(0, 0, 0, 0);
+        const end = endDate ? new Date(endDate) : new Date();
+        end.setHours(23, 59, 59, 999);
+        return oDate >= start && oDate <= end;
+      }
       return true;
     });
-  }, [orders, selectedTimeframe, now]);
+  }, [orders, selectedTimeframe, startDate, endDate, now]);
 
   // ── 2. Aggregate Customer Analytics ──
   const customerAnalytics = useMemo(() => {
@@ -335,28 +354,42 @@ export default function InsightsPage({ onViewOrder, onToggleSidebar, collapsed }
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center bg-[#efede6] p-1 rounded-xl gap-1">
             {[
-              { id: 'all', label: 'All Time' },
-              { id: 'month', label: 'This Month' },
+              { id: 'today', label: 'Today (Default)' },
               { id: 'week', label: 'This Week' },
-              { id: 'today', label: 'Today' },
+              { id: 'month', label: 'This Month' },
+              { id: 'all', label: 'All Time' },
+              { id: 'custom', label: 'Custom Range' },
             ].map((tf) => (
               <button
                 key={tf.id}
                 onClick={() => setSelectedTimeframe(tf.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-1.5 ${
                   selectedTimeframe === tf.id
                     ? 'bg-bk-red text-white shadow'
                     : 'text-gray-600 hover:text-bk-charcoal hover:bg-white/60'
                 }`}
               >
+                {tf.id === 'custom' && <Calendar size={13} />}
                 {tf.label}
               </button>
             ))}
           </div>
 
+          {/* Single Cancel / Reset Filter Button (✕) */}
+          {selectedTimeframe !== 'today' && (
+            <button
+              onClick={handleResetTimeframe}
+              className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-red-600 hover:text-white bg-red-50 hover:bg-red-600 border border-red-200 transition flex items-center gap-1 shadow-xs active:scale-95 animate-fadeSlideUp"
+              title="Reset filter to Today"
+            >
+              <X size={14} />
+              <span>Reset Filter</span>
+            </button>
+          )}
+
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-2 bg-[#282828] hover:bg-black text-white text-xs font-bold rounded-xl transition shadow active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#282828] hover:bg-black text-white text-xs font-bold rounded-xl transition shadow active:scale-95 ml-auto sm:ml-0"
             title="Export Excel Report"
           >
             <Download size={14} className="text-bk-gold" />
@@ -364,6 +397,40 @@ export default function InsightsPage({ onViewOrder, onToggleSidebar, collapsed }
           </button>
         </div>
       </div>
+
+      {/* Custom Date Range Picker Bar for Insights */}
+      {selectedTimeframe === 'custom' && (
+        <div className="bg-amber-50/80 border-b border-bk-gold/20 px-4 md:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-bk-charcoal animate-fadeSlideUp">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-1.5 text-bk-red">
+              <Calendar size={15} />
+              <span className="uppercase tracking-wider font-black">Date Range Filter:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500 font-bold">From:</span>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="border border-bk-gold/40 rounded-xl px-3 py-1.5 bg-white outline-none focus:border-bk-red focus:ring-2 focus:ring-bk-red/20 text-xs font-bold text-bk-charcoal shadow-inner"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500 font-bold">To:</span>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="border border-bk-gold/40 rounded-xl px-3 py-1.5 bg-white outline-none focus:border-bk-red focus:ring-2 focus:ring-bk-red/20 text-xs font-bold text-bk-charcoal shadow-inner"
+              />
+            </div>
+          </div>
+
+          <span className="text-xs text-bk-red font-black bg-bk-red/10 px-2.5 py-1 rounded-full">
+            {filteredOrders.length} order{filteredOrders.length !== 1 ? 's' : ''} found
+          </span>
+        </div>
+      )}
 
       {/* ── Main Container ── */}
       <div className="flex-1 p-4 md:p-6 space-y-6 max-w-screen-2xl w-full mx-auto">
