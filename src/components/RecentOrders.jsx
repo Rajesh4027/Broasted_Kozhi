@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Search, FileSpreadsheet, Eye, Trash2, Menu, FileDown, Copy, Check } from 'lucide-react';
+import { Search, FileSpreadsheet, Eye, Pencil, Trash2, Menu, FileDown, Copy, Check, Sparkles } from 'lucide-react';
 import { useBilling } from '../context/BillingContext';
 import { exportOrdersToExcel } from '../utils/excelExport';
 import { generateInvoicePdf } from '../utils/pdfExport';
 
-export default function RecentOrders({ onView, onToggleSidebar, collapsed }) {
-  const { orders, deleteOrder, storeSettings } = useBilling();
+export default function RecentOrders({ onView, onToggleSidebar, collapsed, onEditOrder }) {
+  const { orders, deleteOrder, storeSettings, startEditOrder, recentlyUpdatedInvoice } = useBilling();
   const [query, setQuery] = useState('');
   const [payment, setPayment] = useState('All');
   const [from, setFrom] = useState('');
@@ -16,6 +16,12 @@ export default function RecentOrders({ onView, onToggleSidebar, collapsed }) {
     navigator.clipboard.writeText(phone);
     setCopiedPhone(phone);
     setTimeout(() => setCopiedPhone(null), 1500);
+  };
+
+  const handleStartEdit = (e, order) => {
+    e.stopPropagation();
+    startEditOrder(order);
+    onEditOrder?.(order);
   };
 
   const filtered = useMemo(() => {
@@ -150,61 +156,96 @@ export default function RecentOrders({ onView, onToggleSidebar, collapsed }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((o, idx) => (
-                    <tr key={o.invoiceNo} className={`border-b border-gray-100 transition hover:bg-red-50/40 ${idx % 2 ? 'bg-bk-cream/40' : 'bg-white'}`}>
-                      <td className="px-4 py-3.5 font-extrabold text-bk-red whitespace-nowrap">#{o.invoiceNo}</td>
-                      <td className="px-4 py-3.5 text-bk-charcoal/80 font-medium whitespace-nowrap">{formatDateTime(o.date)}</td>
-                      <td className="px-4 py-3.5 font-bold text-bk-charcoal max-w-[120px] truncate">{o.customerName || <span className="text-bk-charcoal">—</span>}</td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        {o.customerPhone
-                          ? <span className="inline-flex items-center gap-1.5">
-                              <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 600, color: '#2A1B1B', letterSpacing: '0.03em' }}>{o.customerPhone}</span>
-                              <button
-                                onClick={() => handleCopyPhone(o.customerPhone)}
-                                className="p-1 rounded-md hover:bg-bk-gold/20 transition active:scale-90"
-                                title="Copy number"
-                              >
-                                {copiedPhone === o.customerPhone
-                                  ? <Check size={13} className="text-green-500" />
-                                  : <Copy size={13} className="text-bk-charcoal/40 hover:text-bk-charcoal" />
-                                }
-                              </button>
-                            </span>
-                          : <span style={{ fontFamily: 'var(--font-display)', color: '#2A1B1B' }}>—</span>
-                        }
-                      </td>
-                      <td className="px-4 py-3.5 whitespace-nowrap">
-                        <span className="text-[11px] font-extrabold bg-bk-gold/25 text-bk-charcoal px-2.5 py-1 rounded-full">{o.paymentMode}</span>
-                      </td>
-                      <td className="px-4 py-3.5 text-bk-charcoal/70 whitespace-nowrap">{o.items.length} item{o.items.length !== 1 ? 's' : ''}</td>
-                      <td className="px-4 py-3.5 text-right font-extrabold text-bk-charcoal whitespace-nowrap">₹{o.total.toFixed(2)}</td>
-                      <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          <button
-                            onClick={() => onView(o)}
-                            className="p-1.5 rounded-lg bg-red-50 text-bk-red hover:bg-bk-red hover:text-white transition shadow-sm"
-                            title="View Invoice"
-                          >
-                            <Eye size={16} />
-                          </button>
-                          <button
-                            onClick={() => generateInvoicePdf(o, storeSettings)}
-                            className="p-1.5 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-600 hover:text-white transition shadow-sm"
-                            title="Save PDF"
-                          >
-                            <FileDown size={16} />
-                          </button>
-                          <button
-                            onClick={(e) => handleDelete(e, o.invoiceNo)}
-                            className="p-1.5 rounded-lg bg-gray-100 text-gray-400 hover:bg-red-600 hover:text-white transition shadow-sm"
-                            title="Delete Order"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {filtered.map((o, idx) => {
+                    const isJustUpdated = recentlyUpdatedInvoice === o.invoiceNo;
+
+                    return (
+                      <tr
+                        key={o.invoiceNo}
+                        className={`border-b border-gray-100 transition-all duration-500 ${
+                          isJustUpdated
+                            ? 'bg-emerald-50/90 ring-2 ring-emerald-400 font-bold shadow-md'
+                            : idx % 2
+                            ? 'bg-bk-cream/40'
+                            : 'bg-white'
+                        }`}
+                      >
+                        <td className="px-4 py-3.5 font-extrabold text-bk-red whitespace-nowrap">
+                          <div className="flex items-center gap-1.5">
+                            <span>#{o.invoiceNo}</span>
+                            {isJustUpdated && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black shadow-md animate-bounce">
+                                <span className="w-2 h-2 rounded-full bg-white animate-ping" />
+                                Updated!
+                              </span>
+                            )}
+                            {o.isEdited && !isJustUpdated && (
+                              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-300">
+                                Edited
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3.5 text-bk-charcoal/80 font-medium whitespace-nowrap">{formatDateTime(o.date)}</td>
+                        <td className="px-4 py-3.5 font-bold text-bk-charcoal max-w-[120px] truncate">{o.customerName || <span className="text-bk-charcoal">—</span>}</td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          {o.customerPhone
+                            ? <span className="inline-flex items-center gap-1.5">
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '13px', fontWeight: 600, color: '#2A1B1B', letterSpacing: '0.03em' }}>{o.customerPhone}</span>
+                                <button
+                                  onClick={() => handleCopyPhone(o.customerPhone)}
+                                  className="p-1 rounded-md hover:bg-bk-gold/20 transition active:scale-90"
+                                  title="Copy number"
+                                >
+                                  {copiedPhone === o.customerPhone
+                                    ? <Check size={13} className="text-green-500" />
+                                    : <Copy size={13} className="text-bk-charcoal/40 hover:text-bk-charcoal" />
+                                  }
+                                </button>
+                              </span>
+                            : <span style={{ fontFamily: 'var(--font-display)', color: '#2A1B1B' }}>—</span>
+                          }
+                        </td>
+                        <td className="px-4 py-3.5 whitespace-nowrap">
+                          <span className="text-[11px] font-extrabold bg-bk-gold/25 text-bk-charcoal px-2.5 py-1 rounded-full">{o.paymentMode}</span>
+                        </td>
+                        <td className="px-4 py-3.5 text-bk-charcoal/70 whitespace-nowrap">{o.items.length} item{o.items.length !== 1 ? 's' : ''}</td>
+                        <td className="px-4 py-3.5 text-right font-extrabold text-bk-charcoal whitespace-nowrap">₹{o.total.toFixed(2)}</td>
+                        <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <button
+                              onClick={() => onView(o)}
+                              className="p-1.5 rounded-lg bg-red-50 text-bk-red hover:bg-bk-red hover:text-white transition shadow-sm active:scale-95"
+                              title="View Invoice"
+                            >
+                              <Eye size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => handleStartEdit(e, o)}
+                              className="p-1.5 rounded-lg bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white transition shadow-sm active:scale-95"
+                              title="Edit Order & Add Extra Items"
+                            >
+                              <Pencil size={16} />
+                            </button>
+                            <button
+                              onClick={() => generateInvoicePdf(o, storeSettings)}
+                              className="p-1.5 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-600 hover:text-white transition shadow-sm active:scale-95"
+                              title="Save PDF"
+                            >
+                              <FileDown size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => handleDelete(e, o.invoiceNo)}
+                              className="p-1.5 rounded-lg bg-gray-100 text-gray-400 hover:bg-red-600 hover:text-white transition shadow-sm active:scale-95"
+                              title="Delete Order"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

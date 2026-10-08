@@ -278,6 +278,27 @@ export function BillingProvider({ children }) {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
 
+  // Edit Existing Order State
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [recentlyUpdatedInvoice, setRecentlyUpdatedInvoice] = useState(null);
+
+  const startEditOrder = useCallback((order) => {
+    if (!order) return;
+    setEditingOrder(order);
+    setCart((order.items || []).map((it) => ({ ...it })));
+    setCustomerName(order.customerName || '');
+    setCustomerPhone(order.customerPhone || '');
+    setIsCartOpen(true);
+  }, []);
+
+  const cancelEditOrder = useCallback(() => {
+    setEditingOrder(null);
+    setCart([]);
+    setCustomerName('');
+    setCustomerPhone('');
+    setIsCartOpen(false);
+  }, []);
+
   useEffect(() => {
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
     if (window.electronAPI?.writeFileData) {
@@ -497,8 +518,40 @@ export function BillingProvider({ children }) {
 
   const finalizeOrder = useCallback(
     ({ paymentMode, customerName, customerPhone }) => {
-      const invoiceNo = getNextInvoiceNo(orders);
       const now = new Date();
+
+      if (editingOrder) {
+        // Update existing invoice in place
+        const targetInvoiceNo = editingOrder.invoiceNo;
+        const updatedOrder = {
+          ...editingOrder,
+          date: now.toISOString(),
+          paymentMode: paymentMode || editingOrder.paymentMode || 'Cash',
+          customerName: customerName !== undefined ? customerName : editingOrder.customerName,
+          customerPhone: customerPhone !== undefined ? customerPhone : editingOrder.customerPhone,
+          items: cart.map((c) => ({ ...c })),
+          subtotal: cartTotal,
+          total: cartTotal,
+          isEdited: true,
+          updatedAt: now.toISOString(),
+        };
+
+        setOrders((prev) =>
+          prev.map((o) => (o.invoiceNo === targetInvoiceNo ? updatedOrder : o))
+        );
+
+        // Activate 3-second alert dot for Live Orders
+        setRecentlyUpdatedInvoice(targetInvoiceNo);
+        setTimeout(() => {
+          setRecentlyUpdatedInvoice(null);
+        }, 3500);
+
+        setEditingOrder(null);
+        return updatedOrder;
+      }
+
+      // Create brand new invoice
+      const invoiceNo = getNextInvoiceNo(orders);
       const order = {
         invoiceNo,
         date: now.toISOString(),
@@ -513,7 +566,7 @@ export function BillingProvider({ children }) {
       localStorage.setItem(COUNTER_KEY, String(invoiceNo));
       return order;
     },
-    [cart, cartTotal, orders]
+    [cart, cartTotal, orders, editingOrder]
   );
 
   const deleteOrder = useCallback((invoiceNo) => {
@@ -539,6 +592,10 @@ export function BillingProvider({ children }) {
     setCustomerName,
     customerPhone,
     setCustomerPhone,
+    editingOrder,
+    startEditOrder,
+    cancelEditOrder,
+    recentlyUpdatedInvoice,
     orders,
     finalizeOrder,
     deleteOrder,

@@ -84,6 +84,7 @@ function AppShell({ onLogout }) {
           onViewOrder={setInvoiceOrder}
           onToggleSidebar={handleToggleSidebar}
           collapsed={collapsed}
+          onEditOrder={() => setActiveView('billing')}
         />
       )}
 

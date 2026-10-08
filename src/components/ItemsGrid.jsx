@@ -7,7 +7,7 @@ import UpdateNotification from './UpdateNotification';
 const VARIANTS = ['Normal', 'Nashville', 'Korean'];
 
 export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout, onToggleSidebar, collapsed, onViewOrder }) {
-  const { addToCart, categories, cartCount, cartTotal, setIsCartOpen } = useBilling();
+  const { addToCart, categories, cartCount, cartTotal, setIsCartOpen, editingOrder, cancelEditOrder } = useBilling();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [showConfirmLogout, setShowConfirmLogout] = useState(false);
@@ -47,6 +47,23 @@ export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout,
 
   return (
     <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+
+      {/* ── Active Order Edit Bar Alert ── */}
+      {editingOrder && (
+        <div className="bg-[#282828] text-white px-4 py-2 border-b border-bk-gold/40 flex items-center justify-between text-xs shrink-0 animate-fadeSlideUp">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            <span className="font-extrabold text-bk-gold">Currently Editing Invoice #{editingOrder.invoiceNo}</span>
+            <span className="text-gray-300 hidden sm:inline">· Adding items from menu will update this bill</span>
+          </div>
+          <button
+            onClick={cancelEditOrder}
+            className="bg-amber-500 hover:bg-amber-600 text-black text-[11px] font-black px-2.5 py-1 rounded-lg transition active:scale-95 shadow-sm"
+          >
+            Cancel Edit
+          </button>
+        </div>
+      )}
 
       {/* ── Top Bar: Search + View Order + Logout ── */}
       <div className="px-3 sm:px-5 pt-3 sm:pt-4 pb-3 bg-white border-b border-bk-gold/30 flex items-center justify-between gap-2 sm:gap-3 shrink-0">

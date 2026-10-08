@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Trash2, Minus, Plus, ReceiptText, X,
-  ShoppingCart, ArrowRight,
+  ShoppingCart, ArrowRight, Pencil,
 } from 'lucide-react';
 import { useBilling } from '../context/BillingContext';
 
@@ -19,6 +19,8 @@ export default function CartPanel({ onGenerateInvoice }) {
     setCustomerName,
     customerPhone,
     setCustomerPhone,
+    editingOrder,
+    cancelEditOrder,
   } = useBilling();
   const [paymentMode, setPaymentMode] = useState('Cash');
 
@@ -51,7 +53,7 @@ export default function CartPanel({ onGenerateInvoice }) {
         <div className="px-5 py-4 border-b border-bk-gold/30 flex items-center justify-between bg-white shrink-0">
           <h3 className="font-extrabold text-bk-charcoal flex items-center gap-2 text-base">
             <ReceiptText size={20} className="text-bk-red" />
-            Current Order
+            {editingOrder ? `Editing Invoice #${editingOrder.invoiceNo}` : 'Current Order'}
             <span className="text-xs bg-bk-gold/20 text-bk-gold-dark font-bold px-2 py-0.5 rounded-full">
               {cartCount}
             </span>
@@ -75,6 +77,22 @@ export default function CartPanel({ onGenerateInvoice }) {
             </button>
           </div>
         </div>
+
+        {/* Editing Alert Banner */}
+        {editingOrder && (
+          <div className="bg-amber-100 border-b border-amber-300 px-4 py-2 flex items-center justify-between text-xs text-amber-900 font-extrabold shrink-0 animate-fadeSlideUp">
+            <span className="flex items-center gap-1.5">
+              <Pencil size={14} className="text-amber-700" />
+              Editing Active Order #{editingOrder.invoiceNo}
+            </span>
+            <button
+              onClick={cancelEditOrder}
+              className="text-[10px] bg-amber-200 hover:bg-amber-300 text-amber-900 px-2 py-0.5 rounded font-bold transition"
+            >
+              Cancel Edit
+            </button>
+          </div>
+        )}
 
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
@@ -193,9 +211,11 @@ export default function CartPanel({ onGenerateInvoice }) {
             {/* Proceed to Bill button */}
             <button
               onClick={handleProceed}
-              className="w-full bg-bk-red hover:bg-bk-red-dark text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2"
+              className={`w-full text-white font-extrabold py-3.5 rounded-xl shadow-lg transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
+                editingOrder ? 'bg-amber-600 hover:bg-amber-700' : 'bg-bk-red hover:bg-bk-red-dark'
+              }`}
             >
-              Proceed to Bill
+              {editingOrder ? `Update & Save Bill (#${editingOrder.invoiceNo})` : 'Proceed to Bill'}
               <ArrowRight size={18} />
             </button>
           </div>
