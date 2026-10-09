@@ -496,9 +496,41 @@ export function BillingProvider({ children }) {
       if (existing) {
         return prev.map((c) => (c.key === key ? { ...c, qty: c.qty + 1 } : c));
       }
-      return [...prev, { key, name: item.name, variant: variant || null, unitPrice: price, qty: 1 }];
+      return [...prev, { key, itemId: item.id, name: item.name, variant: variant || null, unitPrice: price, qty: 1 }];
     });
   }, []);
+
+  const updateCartItemVariant = useCallback((oldKey, newVariant) => {
+    setCart((prev) => {
+      const targetItem = prev.find((c) => c.key === oldKey);
+      if (!targetItem || targetItem.variant === newVariant) return prev;
+
+      const itemId = targetItem.itemId || oldKey.split('__')[0];
+      const newKey = `${itemId}__${newVariant}`;
+
+      // Find item definition in categories to update unitPrice for newVariant
+      let newPrice = targetItem.unitPrice;
+      categories.forEach((cat) => {
+        const found = cat.items.find((i) => i.id === itemId);
+        if (found && found.prices && found.prices[newVariant] !== undefined) {
+          newPrice = found.prices[newVariant];
+        }
+      });
+
+      const existingIndex = prev.findIndex((c) => c.key === newKey);
+      if (existingIndex >= 0 && newKey !== oldKey) {
+        return prev
+          .map((c) => (c.key === newKey ? { ...c, qty: c.qty + targetItem.qty } : c))
+          .filter((c) => c.key !== oldKey);
+      } else {
+        return prev.map((c) =>
+          c.key === oldKey
+            ? { ...c, key: newKey, variant: newVariant, unitPrice: newPrice }
+            : c
+        );
+      }
+    });
+  }, [categories]);
 
   const updateQty = useCallback((key, qty) => {
     setCart((prev) => {
@@ -581,6 +613,7 @@ export function BillingProvider({ children }) {
   const value = {
     cart,
     addToCart,
+    updateCartItemVariant,
     updateQty,
     removeFromCart,
     clearCart,

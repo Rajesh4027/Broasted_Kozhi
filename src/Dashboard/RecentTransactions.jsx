@@ -3,7 +3,7 @@ import { useBilling } from '../context/BillingContext';
 
 const MODE_STYLE = {
   Cash: 'bg-green-100 text-green-700',
-  UPI:  'bg-yellow-100 text-yellow-700',
+  UPI: 'bg-yellow-100 text-yellow-700',
   Card: 'bg-purple-100 text-purple-700',
 };
 
@@ -37,9 +37,8 @@ export default function RecentTransactions({ onView, ordersProp }) {
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-bk-red">#{o.invoiceNo}</span>
                   <span
-                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                      MODE_STYLE[o.paymentMode] || 'bg-gray-100 text-gray-600'
-                    }`}
+                    className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${MODE_STYLE[o.paymentMode] || 'bg-gray-100 text-gray-600'
+                      }`}
                   >
                     {o.paymentMode}
                   </span>

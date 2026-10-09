@@ -47,9 +47,7 @@ export default function StatsCards({ ordersProp, timeFilter = 'Today' }) {
   }, [ordersToUse, allOrders]);
 
   const fmt = (n) =>
-    n >= 1000
-      ? `₹${(n / 1000).toFixed(1)}k`
-      : `₹${n.toFixed(2)}`;
+    `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">

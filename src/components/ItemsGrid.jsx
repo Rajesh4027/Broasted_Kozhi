@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Plus, Search, X, LogOut, AlertCircle, ChevronLeft, ChevronRight, ShoppingCart, Menu } from 'lucide-react';
+import { Plus, Search, X, LogOut, AlertCircle, ChevronLeft, ChevronRight, ShoppingCart, Menu, Check } from 'lucide-react';
 import { useBilling } from '../context/BillingContext';
 import VoiceAssistant from './VoiceBilling/VoiceAssistant';
 import UpdateNotification from './UpdateNotification';
@@ -44,6 +44,29 @@ export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout,
   const scrollCats = (dir) => {
     catScrollRef.current?.scrollBy({ left: dir * 160, behavior: 'smooth' });
   };
+
+  // Grid layout column mode preference (3 or 4 columns)
+  const [gridCols, setGridCols] = useState(() => {
+    try {
+      const saved = localStorage.getItem('bk_pos_grid_cols');
+      return saved ? Number(saved) : 3;
+    } catch {
+      return 3;
+    }
+  });
+
+  const handleSetGridCols = (cols) => {
+    setGridCols(cols);
+    try {
+      localStorage.setItem('bk_pos_grid_cols', String(cols));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const gridClass = gridCols === 4
+    ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3.5 pb-4'
+    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4';
 
   return (
     <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
@@ -283,14 +306,55 @@ export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout,
       )}
 
       {/* ── Items Grid (scrollable) ── */}
-      <div className="flex-1 overflow-y-auto p-5" style={{ minHeight: 0 }}>
+      <div className="flex-1 overflow-y-auto p-4 sm:p-5" style={{ minHeight: 0 }}>
         {isSearching ? (
           searchResults.length > 0 ? (
             <>
-              <h2 className="text-xs font-bold text-bk-charcoal/50 mb-4 uppercase tracking-widest">
-                Search Results — {searchResults.length} items
-              </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xs font-bold text-bk-charcoal/50 uppercase tracking-widest">
+                  Search Results — {searchResults.length} items
+                </h2>
+
+                {/* Grid View Mode Toggle Icons */}
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-bk-gold/30 shadow-sm">
+                  <button
+                    onClick={() => handleSetGridCols(3)}
+                    title="3 Columns Product Grid View"
+                    className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
+                      gridCols === 3
+                        ? 'bg-bk-red text-white shadow-sm'
+                        : 'text-bk-charcoal/60 hover:text-bk-charcoal hover:bg-bk-cream'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 20 20">
+                      <rect x="2" y="3" width="4.5" height="14" rx="1" />
+                      <rect x="7.75" y="3" width="4.5" height="14" rx="1" />
+                      <rect x="13.5" y="3" width="4.5" height="14" rx="1" />
+                    </svg>
+                    <span className="hidden sm:inline">3 Cols</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleSetGridCols(4)}
+                    title="4 Columns Product Grid View"
+                    className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
+                      gridCols === 4
+                        ? 'bg-bk-red text-white shadow-sm'
+                        : 'text-bk-charcoal/60 hover:text-bk-charcoal hover:bg-bk-cream'
+                    }`}
+                  >
+                    <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 20 20">
+                      <rect x="1.5" y="3" width="3.25" height="14" rx="0.75" />
+                      <rect x="6" y="3" width="3.25" height="14" rx="0.75" />
+                      <rect x="10.5" y="3" width="3.25" height="14" rx="0.75" />
+                      <rect x="15" y="3" width="3.25" height="14" rx="0.75" />
+                    </svg>
+                    <span className="hidden sm:inline">4 Cols</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className={gridClass}>
                 {searchResults.map((item) => (
                   <ItemCard key={item.id} item={item} onAdd={addToCart} sub={item.categoryName} />
                 ))}
@@ -304,14 +368,55 @@ export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout,
           )
         ) : (
           <>
-            <h2 className="text-xl font-extrabold text-bk-red mb-4">{category.name}</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-extrabold text-bk-red">{category.name}</h2>
+
+              {/* Grid View Mode Toggle Icons (3 columns vs 4 columns) */}
+              <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-bk-gold/30 shadow-sm">
+                <button
+                  onClick={() => handleSetGridCols(3)}
+                  title="3 Columns Product View (1 row 3 columns)"
+                  className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
+                    gridCols === 3
+                      ? 'bg-bk-red text-white shadow-sm'
+                      : 'text-bk-charcoal/60 hover:text-bk-charcoal hover:bg-bk-cream'
+                  }`}
+                >
+                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 20 20">
+                    <rect x="2" y="3" width="4.5" height="14" rx="1" />
+                    <rect x="7.75" y="3" width="4.5" height="14" rx="1" />
+                    <rect x="13.5" y="3" width="4.5" height="14" rx="1" />
+                  </svg>
+                  <span className="hidden sm:inline">3 Cols</span>
+                </button>
+
+                <button
+                  onClick={() => handleSetGridCols(4)}
+                  title="4 Columns Product View (1 row 4 columns)"
+                  className={`p-1.5 sm:px-2.5 sm:py-1 rounded-lg text-xs font-extrabold flex items-center gap-1.5 transition-all duration-200 active:scale-95 ${
+                    gridCols === 4
+                      ? 'bg-bk-red text-white shadow-sm'
+                      : 'text-bk-charcoal/60 hover:text-bk-charcoal hover:bg-bk-cream'
+                  }`}
+                >
+                  <svg className="w-4 h-4 fill-current shrink-0" viewBox="0 0 20 20">
+                    <rect x="1.5" y="3" width="3.25" height="14" rx="0.75" />
+                    <rect x="6" y="3" width="3.25" height="14" rx="0.75" />
+                    <rect x="10.5" y="3" width="3.25" height="14" rx="0.75" />
+                    <rect x="15" y="3" width="3.25" height="14" rx="0.75" />
+                  </svg>
+                  <span className="hidden sm:inline">4 Cols</span>
+                </button>
+              </div>
+            </div>
+
             {category.items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-center">
                 <span className="text-4xl mb-3">🍽️</span>
                 <p className="text-bk-charcoal/40 font-medium">No items in this category yet.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 pb-4">
+              <div className={gridClass}>
                 {category.items.map((item) => (
                   <ItemCard key={item.id} item={item} onAdd={addToCart} />
                 ))}
@@ -327,8 +432,22 @@ export default function ItemsGrid({ activeCategory, setActiveCategory, onLogout,
 function ItemCard({ item, onAdd, sub }) {
   const hasVariants = !!item.prices;
   const [variant, setVariant] = useState(hasVariants ? 'Normal' : null);
+  const [addState, setAddState] = useState('idle'); // 'idle' | 'ring' | 'tick'
   const price = hasVariants ? item.prices[variant] : item.price;
   const isOutOfStock = item.status === 'Out of Stock';
+
+  const handleAddClick = () => {
+    if (isOutOfStock || addState !== 'idle') return;
+    onAdd(item, variant, price);
+    setAddState('ring');
+
+    setTimeout(() => {
+      setAddState('tick');
+      setTimeout(() => {
+        setAddState('idle');
+      }, 350);
+    }, 250);
+  };
 
   return (
     <div className={`bg-white rounded-2xl border border-bk-gold/40 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden flex flex-col justify-between group ${
@@ -405,18 +524,41 @@ function ItemCard({ item, onAdd, sub }) {
         </div>
       </div>
 
-      <div className="px-4 pb-4 flex items-center justify-between mt-1">
+      <div className="px-4 pb-4 flex items-center justify-between mt-1 h-12">
         <span className="text-xl font-extrabold text-bk-red">₹{price}</span>
+        
+        {/* Animated Shrink-to-Ring & Tick Add Button */}
         <button
           disabled={isOutOfStock}
-          onClick={() => onAdd(item, variant, price)}
-          className={`flex items-center gap-1.5 text-sm font-bold px-4 py-2 rounded-xl transition shadow-md ${
+          onClick={handleAddClick}
+          title={isOutOfStock ? 'Item is out of stock' : 'Add item to order'}
+          className={`flex items-center justify-center font-bold transition-all duration-300 ease-in-out shadow-md overflow-hidden ${
             isOutOfStock
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
-              : 'bg-bk-red hover:bg-bk-red-dark text-white active:scale-95'
+              ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none px-4 py-2 rounded-xl text-sm'
+              : addState === 'idle'
+              ? 'bg-bk-red hover:bg-bk-red-dark text-white active:scale-95 px-4 py-2 rounded-xl text-sm min-w-[76px] h-9'
+              : addState === 'ring'
+              ? 'bg-bk-red text-white rounded-full w-9 h-9 p-0 min-w-[36px] shadow-lg ring-2 ring-red-200'
+              : 'bg-bk-red text-white rounded-full w-9 h-9 p-0 min-w-[36px] shadow-lg scale-105'
           }`}
         >
-          <Plus size={16} /> {isOutOfStock ? 'Sold Out' : 'Add'}
+          {isOutOfStock ? (
+            'Sold Out'
+          ) : addState === 'ring' ? (
+            /* Progress Spinner Ring (Matching 2nd Screenshot) */
+            <svg className="w-5 h-5 animate-spin text-white shrink-0" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-30" cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2.5" />
+              <path className="opacity-100" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : addState === 'tick' ? (
+            /* Success Tick Checkmark */
+            <Check size={18} strokeWidth={3.5} className="text-white shrink-0 animate-fadeSlideUp" />
+          ) : (
+            /* Standard Add Button Content */
+            <span className="flex items-center gap-1.5 whitespace-nowrap animate-fadeSlideUp">
+              <Plus size={16} strokeWidth={2.5} /> Add
+            </span>
+          )}
         </button>
       </div>
     </div>

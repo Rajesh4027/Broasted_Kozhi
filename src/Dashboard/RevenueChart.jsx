@@ -75,7 +75,7 @@ export default function RevenueChart({ ordersProp, timeFilter = 'Today' }) {
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1].map((t) => ({
     y: PAD_T + chartH * (1 - t),
-    label: t === 0 ? '0' : `₹${((maxRev * t) / 1000).toFixed(1)}k`,
+    label: t === 0 ? '₹0.00' : `₹${(maxRev * t).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`,
   }));
 
   return (
@@ -90,7 +90,7 @@ export default function RevenueChart({ ordersProp, timeFilter = 'Today' }) {
           </p>
         </div>
         <span className="text-xs bg-bk-red/10 text-bk-red font-semibold px-3 py-1 rounded-full">
-          ₹{days.reduce((s, d) => s + d.revenue, 0).toLocaleString('en-IN')} total
+          ₹{days.reduce((s, d) => s + d.revenue, 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
         </span>
       </div>
 
@@ -159,7 +159,7 @@ export default function RevenueChart({ ordersProp, timeFilter = 'Today' }) {
                     fill={isToday ? '#E4212B' : '#FFC72C'}
                     fontWeight={700}
                   >
-                    ₹{d.revenue >= 1000 ? `${(d.revenue / 1000).toFixed(1)}k` : d.revenue}
+                    ₹{d.revenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </text>
                 )}
               </g>

@@ -1,14 +1,17 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Trash2, Minus, Plus, ReceiptText, X,
-  ShoppingCart, ArrowRight, Pencil, Phone, User, Check, AlertCircle
+  ShoppingCart, ArrowRight, Pencil, Phone, User, Check, AlertCircle, ChevronDown
 } from 'lucide-react';
 import { useBilling } from '../context/BillingContext';
+
+const VARIANTS = ['Normal', 'Nashville', 'Korean'];
 
 export default function CartPanel({ onGenerateInvoice }) {
   const {
     cart,
     updateQty,
+    updateCartItemVariant,
     removeFromCart,
     clearCart,
     cartTotal,
@@ -26,6 +29,7 @@ export default function CartPanel({ onGenerateInvoice }) {
 
   const [paymentMode, setPaymentMode] = useState('Cash');
   const [activeDropdown, setActiveDropdown] = useState(null); // 'phone' | 'name' | null
+  const [openVariantKey, setOpenVariantKey] = useState(null); // cart item key for custom variant dropdown
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const containerRef = useRef(null);
 
@@ -158,9 +162,26 @@ export default function CartPanel({ onGenerateInvoice }) {
         setHighlightedIndex(-1);
       }
     };
+
+    const handleVariantOutside = (event) => {
+      if (openVariantKey) {
+        const activeContainer = document.querySelector(`[data-variant-container="${openVariantKey}"]`);
+        if (!activeContainer || !activeContainer.contains(event.target)) {
+          setOpenVariantKey(null);
+        }
+      }
+    };
+
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('pointerdown', handleVariantOutside, true);
+    document.addEventListener('mousedown', handleVariantOutside, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleVariantOutside, true);
+      document.removeEventListener('mousedown', handleVariantOutside, true);
+    };
+  }, [openVariantKey]);
 
   const handleProceed = () => {
     if (cart.length === 0 || isNameMismatch) return;
@@ -233,7 +254,12 @@ export default function CartPanel({ onGenerateInvoice }) {
         )}
 
         {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        <div
+          className="flex-1 overflow-y-auto px-4 py-3 space-y-2"
+          onScroll={() => {
+            if (openVariantKey) setOpenVariantKey(null);
+          }}
+        >
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-20">
               <div className="w-16 h-16 rounded-2xl bg-bk-gold/10 flex items-center justify-center mb-4">
@@ -243,50 +269,117 @@ export default function CartPanel({ onGenerateInvoice }) {
               <p className="text-xs text-gray-400 mt-1">Add items from the menu</p>
             </div>
           ) : (
-            cart.map((c, idx) => (
-              <div
-                key={c.key}
-                className="group flex items-center gap-2 bg-bk-cream rounded-xl p-3 border border-bk-gold/20 shadow-sm hover:border-bk-gold/60 hover:shadow-md transition-all duration-200 animate-fadeSlideUp"
-                style={{ animationDelay: `${idx * 40}ms` }}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-bk-charcoal leading-snug break-words">
-                    {c.name}
-                  </p>
-                  <p className="text-[11px] text-bk-charcoal/60 mt-0.5">
-                    {c.variant ? `${c.variant} · ` : ''}₹{c.unitPrice} each
-                  </p>
-                </div>
+            cart.map((c, idx) => {
+              const isVariantItem = c.variant !== null && c.variant !== undefined;
+              const isPopoverOpen = openVariantKey === c.key;
+              const openUpward = idx >= cart.length - 2 && idx > 0;
 
-                <div className="flex items-center gap-1 bg-white rounded-lg p-0.5 border border-bk-gold/40 shrink-0">
-                  <button
-                    onClick={() => updateQty(c.key, c.qty - 1)}
-                    className="w-6 h-6 rounded-md text-bk-charcoal flex items-center justify-center hover:bg-bk-gold/30 active:scale-90 transition"
-                  >
-                    <Minus size={12} />
-                  </button>
-                  <span className="w-5 text-center text-xs font-extrabold">{c.qty}</span>
-                  <button
-                    onClick={() => updateQty(c.key, c.qty + 1)}
-                    className="w-6 h-6 rounded-md text-bk-charcoal flex items-center justify-center hover:bg-bk-gold/30 active:scale-90 transition"
-                  >
-                    <Plus size={12} />
-                  </button>
-                </div>
-
-                <span className="w-14 text-right text-sm font-extrabold text-bk-red shrink-0">
-                  ₹{c.unitPrice * c.qty}
-                </span>
-
-                <button
-                  onClick={() => removeFromCart(c.key)}
-                  className="p-1 text-gray-300 hover:text-bk-red transition shrink-0"
-                  title="Remove"
+              return (
+                <div
+                  key={c.key}
+                  className={`group flex items-center gap-2 bg-bk-cream rounded-xl p-3 border border-bk-gold/20 shadow-sm hover:border-bk-gold/60 hover:shadow-md transition-all duration-200 animate-fadeSlideUp relative ${
+                    isPopoverOpen ? 'z-30 shadow-md ring-1 ring-bk-red/30' : 'z-10'
+                  }`}
+                  style={{ animationDelay: `${idx * 40}ms` }}
                 >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-bk-charcoal leading-snug break-words">
+                      {c.name}
+                    </p>
+
+                    {/* Single Line: Variant Badge + Unit Price */}
+                    <div className="flex items-center gap-1.5 mt-1 whitespace-nowrap">
+                      {isVariantItem ? (
+                        <div
+                          className="relative inline-block variant-popover-container"
+                          data-variant-container={c.key}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setOpenVariantKey(isPopoverOpen ? null : c.key)}
+                            className="flex items-center justify-between gap-1 text-[11px] font-extrabold text-amber-950 bg-[#fffbf2] hover:bg-amber-100/60 border border-amber-500/60 px-2 py-0.5 rounded-full shadow-xs transition active:scale-95 whitespace-nowrap"
+                            title="Click to select variant"
+                          >
+                            <span>{c.variant}</span>
+                            <ChevronDown
+                              size={11}
+                              strokeWidth={2.5}
+                              className={`text-amber-800 transition-transform duration-200 ${isPopoverOpen ? 'rotate-180' : ''}`}
+                            />
+                          </button>
+
+                          {/* Custom Dropdown Popover Menu (Ultra Compact) */}
+                          {isPopoverOpen && (
+                            <div className={`absolute left-0 w-[105px] bg-white border border-amber-500/60 rounded-xl shadow-xl z-50 overflow-hidden py-0.5 animate-fadeSlideUp divide-y divide-amber-100/50 ${
+                              openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
+                            }`}>
+                              {VARIANTS.map((v) => {
+                                const isSelected = c.variant === v;
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => {
+                                      updateCartItemVariant(c.key, v);
+                                      setOpenVariantKey(null);
+                                    }}
+                                    className={`w-full text-left px-2.5 py-1 text-[11px] transition flex items-center justify-between ${
+                                      isSelected
+                                        ? 'bg-amber-100/70 text-bk-red font-black'
+                                        : 'text-bk-charcoal hover:bg-amber-50 hover:text-bk-red font-semibold'
+                                    }`}
+                                  >
+                                    <span>{v}</span>
+                                    {isSelected && (
+                                      <Check size={12} className="text-bk-red shrink-0" strokeWidth={2.5} />
+                                    )}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+
+                      <span className="text-[11px] text-bk-charcoal/60 font-medium whitespace-nowrap">
+                        {isVariantItem ? ' · ' : ''}₹{c.unitPrice} each
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Pill-Shaped Quantity Controller UI (Matching 3rd Screenshot) */}
+                  <div className="flex items-center bg-white rounded-full p-0.5 border border-amber-300/80 shadow-xs shrink-0">
+                    <button
+                      onClick={() => updateQty(c.key, c.qty - 1)}
+                      className="w-7 h-7 rounded-full bg-amber-100/70 hover:bg-amber-200 text-amber-900 font-extrabold flex items-center justify-center transition active:scale-90"
+                      title="Decrease quantity"
+                    >
+                      <Minus size={13} strokeWidth={3} />
+                    </button>
+                    <span className="w-6 text-center text-xs font-black text-bk-charcoal">{c.qty}</span>
+                    <button
+                      onClick={() => updateQty(c.key, c.qty + 1)}
+                      className="w-7 h-7 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-extrabold flex items-center justify-center transition active:scale-90 shadow-sm"
+                      title="Increase quantity"
+                    >
+                      <Plus size={13} strokeWidth={3} />
+                    </button>
+                  </div>
+
+                  <span className="w-13 text-right text-sm font-extrabold text-bk-red shrink-0">
+                    ₹{c.unitPrice * c.qty}
+                  </span>
+
+                  <button
+                    onClick={() => removeFromCart(c.key)}
+                    className="p-1 text-gray-300 hover:text-bk-red transition shrink-0"
+                    title="Remove item"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              );
+            })
           )}
         </div>
 
