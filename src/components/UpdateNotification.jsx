@@ -14,7 +14,7 @@ export default function UpdateNotification() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const dropdownRef = useRef(null);
-  const [installedVersion, setInstalledVersion] = useState('1.7.0');
+  const [installedVersion, setInstalledVersion] = useState('1.8.0');
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
