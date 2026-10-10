@@ -105,22 +105,22 @@ export default function InvoiceModal({ order, onClose }) {
           <div id="invoice-print-area" className="p-6">
             <div className="flex flex-col items-center text-center mb-3">
               <div className="flex justify-center w-full text-center mb-2">
-                <img src={logo2} alt={storeSettings?.storeName || 'Broasted Kozhi'} className="h-16 w-auto object-contain mx-auto" />
+                <img src={logo2} alt={storeSettings?.storeName || 'Broasted Kozhi'} className="h-20 w-auto object-contain mx-auto" />
               </div>
               {addressLines.map((line, idx) => (
-                <p key={idx} className="text-[11px] leading-tight text-bk-charcoal/80 text-center">{line}</p>
+                <p key={idx} className="text-xs leading-snug text-bk-charcoal/80 text-center">{line}</p>
               ))}
               {storeSettings?.phone && (
-                <p className="text-[11px] leading-tight text-bk-charcoal/90 font-bold mt-1 text-center">
+                <p className="text-xs leading-snug text-bk-charcoal/90 font-bold mt-1 text-center">
                   Phone: {storeSettings.phone}
                 </p>
               )}
             </div>
 
             <div className="border-t border-dashed border-bk-charcoal/30 my-2" />
-            <p className="text-center font-bold text-sm mb-1">{storeSettings?.billTitle || 'Bill of Supply'}</p>
+            <p className="text-center font-bold text-base mb-1">{storeSettings?.billTitle || 'Bill of Supply'}</p>
 
-            <div className="flex justify-between text-xs text-bk-charcoal/70 mb-1">
+            <div className="flex justify-between text-[13px] text-bk-charcoal/80 mb-1">
               <div>
                 <span className="font-extrabold text-bk-charcoal">{order.paymentMode}</span>
                 {order.customerName && <div className="font-semibold text-bk-charcoal/90">Customer: {order.customerName}</div>}
@@ -135,13 +135,13 @@ export default function InvoiceModal({ order, onClose }) {
 
             <div className="border-t border-dashed border-bk-charcoal/30 my-2" />
 
-            <table className="w-full text-xs">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-left border-b border-bk-charcoal/30">
-                  <th className="py-1 font-bold">Item</th>
-                  <th className="py-1 font-bold text-center">Qty</th>
-                  <th className="py-1 font-bold text-right">Price</th>
-                  <th className="py-1 font-bold text-right">Amount</th>
+                  <th className="py-1 font-bold" style={{ width: '44%' }}>Item</th>
+                  <th className="py-1 font-bold text-center" style={{ width: '12%' }}>Qty</th>
+                  <th className="py-1 font-bold text-right" style={{ width: '21%' }}>Price</th>
+                  <th className="py-1 font-bold text-right" style={{ width: '23%' }}>Amount</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,17 +157,17 @@ export default function InvoiceModal({ order, onClose }) {
             </table>
 
             <div className="border-t border-dashed border-bk-charcoal/30 my-2" />
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-[13px]">
               <span>Subtotal</span>
               <span>{curr}{order.subtotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm font-extrabold text-bk-red mt-1">
+            <div className="flex justify-between text-base font-extrabold text-bk-red mt-1">
               <span>Total</span>
               <span>{curr}{order.total.toFixed(2)}</span>
             </div>
             <div className="border-t border-dashed border-bk-charcoal/30 my-3" />
-            <p className="text-center text-[11px] font-bold">Terms &amp; Conditions</p>
-            <p className="text-center text-[11px] text-bk-charcoal/70">
+            <p className="text-center text-xs font-bold">Terms &amp; Conditions</p>
+            <p className="text-center text-xs text-bk-charcoal/70">
               {storeSettings?.footerNote || 'Thank you for doing business with us.'}
             </p>
           </div>

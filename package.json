@@ -1,6 +1,6 @@
 {
   "name": "bk-billing",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Broasted Kozhi Bill Hub Desktop Software",
   "author": "Broasted Kozhi",
   "private": true,
@@ -37,12 +37,6 @@
       "target": [
         {
           "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        },
-        {
-          "target": "portable",
           "arch": [
             "x64"
           ]

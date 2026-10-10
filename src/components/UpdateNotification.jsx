@@ -14,7 +14,7 @@ export default function UpdateNotification() {
   const [errorMessage, setErrorMessage] = useState('');
 
   const dropdownRef = useRef(null);
-  const [installedVersion, setInstalledVersion] = useState('1.8.0');
+  const [installedVersion, setInstalledVersion] = useState('1.9.0');
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -131,15 +131,14 @@ export default function UpdateNotification() {
       <button
         onClick={() => setIsDropdownOpen((v) => !v)}
         title="Software Updates & Release Notes"
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-extrabold shadow-sm transition-all duration-300 active:scale-95 border ${
-          isReadyToRestart
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-extrabold shadow-sm transition-all duration-300 active:scale-95 border ${isReadyToRestart
             ? 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-400 animate-bounce'
             : isDownloading
-            ? 'bg-amber-500 text-white border-amber-400'
-            : updateAvailable
-            ? 'bg-red-50 text-bk-red border-red-300 hover:bg-bk-red hover:text-white'
-            : 'bg-bk-cream text-bk-charcoal/80 border-bk-gold/40 hover:border-bk-gold hover:bg-white'
-        }`}
+              ? 'bg-amber-500 text-white border-amber-400'
+              : updateAvailable
+                ? 'bg-red-50 text-bk-red border-red-300 hover:bg-bk-red hover:text-white'
+                : 'bg-bk-cream text-bk-charcoal/80 border-bk-gold/40 hover:border-bk-gold hover:bg-white'
+          }`}
       >
         <div className="relative flex items-center justify-center">
           {isDownloading ? (
@@ -161,10 +160,10 @@ export default function UpdateNotification() {
           {isReadyToRestart
             ? 'Restart App'
             : isDownloading
-            ? `${downloadProgress}%`
-            : updateAvailable
-            ? `Update v${updateInfo?.version || '1.2.0'}`
-            : `v${installedVersion}`}
+              ? `${downloadProgress}%`
+              : updateAvailable
+                ? `Update v${updateInfo?.version || '1.2.0'}`
+                : `v${installedVersion}`}
         </span>
       </button>
 
@@ -174,9 +173,8 @@ export default function UpdateNotification() {
           {/* Popover Header */}
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2">
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${
-                isReadyToRestart ? 'bg-emerald-600' : updateAvailable ? 'bg-bk-red' : 'bg-[#282828]'
-              }`}>
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-white shadow-sm ${isReadyToRestart ? 'bg-emerald-600' : updateAvailable ? 'bg-bk-red' : 'bg-[#282828]'
+                }`}>
                 {isReadyToRestart ? <CheckCircle2 size={18} /> : <Sparkles size={18} />}
               </div>
               <div>
