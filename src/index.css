@@ -280,8 +280,8 @@ textarea {
     /* Fill 80mm page completely */
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 2mm 5mm !important;
-    /* 5mm padding on both sides keeps text safely inside the 70mm physical print area and perfectly centered! */
+    padding: 2mm 7mm 2mm 4mm !important;
+    /* Added more right side padding! */
     background: #ffffff !important;
     box-sizing: border-box !important;
     text-align: left !important;
@@ -289,23 +289,42 @@ textarea {
 
   #invoice-print-area img {
     display: block !important;
-    margin: 0 auto 2mm auto !important;
-    max-width: 45mm !important;
+    margin: 0 auto 3mm auto !important;
+    max-width: 42mm !important;
+    height: auto !important;
+  }
+
+  /* Force larger fonts strictly for printed receipt */
+  #invoice-print-area p,
+  #invoice-print-area span,
+  #invoice-print-area div {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  #invoice-print-area .text-sm,
+  #invoice-print-area .text-base {
+    font-size: 15px !important;
+  }
+
+  #invoice-print-area .text-base.font-extrabold {
+    font-size: 17px !important;
   }
 
   #invoice-print-area table {
     width: 100% !important;
     table-layout: fixed !important;
     border-collapse: collapse !important;
-    margin: 2mm 0 !important;
+    margin: 3mm 0 !important;
   }
 
   #invoice-print-area th,
   #invoice-print-area td {
+    font-size: 13px !important;
     word-break: break-word !important;
     overflow-wrap: break-word !important;
     color: #000000 !important;
-    padding: 1px !important;
+    padding: 3px 1px !important;
   }
 
   tr {
