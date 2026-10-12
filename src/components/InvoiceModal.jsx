@@ -49,30 +49,13 @@ export default function InvoiceModal({ order, onClose }) {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  const handlePrint = async () => {
+  const handlePrint = () => {
     setIsPrinting(true);
-
-    if (window.electronAPI?.printSilent) {
-      try {
-        const res = await window.electronAPI.printSilent();
-        if (res?.success) {
-          setPrintDone(true);
-          setTimeout(() => {
-            triggerClose();
-          }, 900);
-          return;
-        }
-      } catch (err) {
-        console.warn('Electron silent print failed, fallback to browser print:', err);
-      }
-    }
-
-    // Browser environment or fallback
     setTimeout(() => {
       window.print();
       setPrintDone(true);
       triggerClose();
-    }, 700);
+    }, 400);
   };
 
   // Countdown ring values
