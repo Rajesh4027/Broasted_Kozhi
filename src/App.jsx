@@ -47,75 +47,77 @@ function AppShell({ onLogout }) {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-bk-cream relative">
-      <Sidebar
-        collapsed={collapsed}
-        onToggle={handleToggleSidebar}
-        activeView={activeView}
-        setActiveView={setActiveView}
-        activeCategory={activeCategory}
-        setActiveCategory={setActiveCategory}
-      />
-
-      {activeView === 'dashboard' && (
-        <DashboardPage
-          onViewOrder={setInvoiceOrder}
-          onToggleSidebar={handleToggleSidebar}
+    <div className="flex h-screen w-screen overflow-hidden bg-bk-cream relative print:h-auto print:w-auto print:overflow-visible print:bg-white">
+      <div id="pos-main-screen" className="flex h-full w-full overflow-hidden print:hidden">
+        <Sidebar
           collapsed={collapsed}
+          onToggle={handleToggleSidebar}
+          activeView={activeView}
+          setActiveView={setActiveView}
+          activeCategory={activeCategory}
+          setActiveCategory={setActiveCategory}
         />
-      )}
 
-      {activeView === 'billing' && (
-        <>
-          <ItemsGrid
-            activeCategory={activeCategory}
-            setActiveCategory={setActiveCategory}
-            onLogout={onLogout}
+        {activeView === 'dashboard' && (
+          <DashboardPage
+            onViewOrder={setInvoiceOrder}
             onToggleSidebar={handleToggleSidebar}
             collapsed={collapsed}
-            onViewOrder={setInvoiceOrder}
           />
-          <CartPanel onGenerateInvoice={handleGenerateInvoice} />
-        </>
-      )}
+        )}
 
-      {activeView === 'orders' && (
-        <LiveOrdersPage
-          onViewOrder={setInvoiceOrder}
-          onToggleSidebar={handleToggleSidebar}
-          collapsed={collapsed}
-          onEditOrder={() => setActiveView('billing')}
-        />
-      )}
+        {activeView === 'billing' && (
+          <>
+            <ItemsGrid
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+              onLogout={onLogout}
+              onToggleSidebar={handleToggleSidebar}
+              collapsed={collapsed}
+              onViewOrder={setInvoiceOrder}
+            />
+            <CartPanel onGenerateInvoice={handleGenerateInvoice} />
+          </>
+        )}
 
-      {activeView === 'insights' && (
-        <InsightsPage
-          onViewOrder={setInvoiceOrder}
-          onToggleSidebar={handleToggleSidebar}
-          collapsed={collapsed}
-        />
-      )}
+        {activeView === 'orders' && (
+          <LiveOrdersPage
+            onViewOrder={setInvoiceOrder}
+            onToggleSidebar={handleToggleSidebar}
+            collapsed={collapsed}
+            onEditOrder={() => setActiveView('billing')}
+          />
+        )}
 
-      {activeView === 'menu' && (
-        <MenuInventoryPage
-          onToggleSidebar={handleToggleSidebar}
-          collapsed={collapsed}
-        />
-      )}
+        {activeView === 'insights' && (
+          <InsightsPage
+            onViewOrder={setInvoiceOrder}
+            onToggleSidebar={handleToggleSidebar}
+            collapsed={collapsed}
+          />
+        )}
 
-      {activeView === 'staff' && (
-        <StaffManagementPage
-          onToggleSidebar={handleToggleSidebar}
-          collapsed={collapsed}
-        />
-      )}
+        {activeView === 'menu' && (
+          <MenuInventoryPage
+            onToggleSidebar={handleToggleSidebar}
+            collapsed={collapsed}
+          />
+        )}
 
-      {activeView === 'settings' && (
-        <SettingsPage
-          onToggleSidebar={handleToggleSidebar}
-          collapsed={collapsed}
-        />
-      )}
+        {activeView === 'staff' && (
+          <StaffManagementPage
+            onToggleSidebar={handleToggleSidebar}
+            collapsed={collapsed}
+          />
+        )}
+
+        {activeView === 'settings' && (
+          <SettingsPage
+            onToggleSidebar={handleToggleSidebar}
+            collapsed={collapsed}
+          />
+        )}
+      </div>
 
       {invoiceOrder && (
         <InvoiceModal order={invoiceOrder} onClose={() => setInvoiceOrder(null)} />

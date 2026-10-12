@@ -49,13 +49,50 @@ export default function InvoiceModal({ order, onClose }) {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    // Stop the auto-close timer immediately so the modal never closes prematurely
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
     setIsPrinting(true);
+
+    // Direct Silent Thermal Printing (No Windows Dialog)
+    if (window.electronAPI?.printSilent) {
+      try {
+        const result = await window.electronAPI.printSilent({
+          deviceName: storeSettings?.selectedPrinter || undefined,
+        });
+
+        setIsPrinting(false);
+        if (result?.success) {
+          setPrintDone(true);
+          setTimeout(() => {
+            triggerClose();
+          }, 1800);
+          return;
+        } else {
+          console.warn('Direct print failed, using print dialog:', result?.failureReason);
+        }
+      } catch (err) {
+        console.error('Direct print exception:', err);
+      }
+    }
+
+    // Fallback if not running in Electron
+    const finishPrint = () => {
+      window.removeEventListener('afterprint', finishPrint);
+      setIsPrinting(false);
+      setPrintDone(true);
+      setTimeout(() => {
+        triggerClose();
+      }, 2000);
+    };
+
+    window.addEventListener('afterprint', finishPrint);
+
     setTimeout(() => {
       window.print();
-      setPrintDone(true);
-      triggerClose();
-    }, 400);
+    }, 150);
   };
 
   // Countdown ring values
@@ -67,6 +104,7 @@ export default function InvoiceModal({ order, onClose }) {
     <>
       {/* ── Backdrop ── */}
       <div
+        id="invoice-modal-backdrop"
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] print:hidden"
         style={{
           transition: 'opacity 0.5s ease',
@@ -90,7 +128,10 @@ export default function InvoiceModal({ order, onClose }) {
         }}
       >
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-bk-gold/30 bg-white shrink-0 print:hidden">
+        <div
+          id="invoice-modal-header"
+          className="flex items-center justify-between px-5 py-4 border-b border-bk-gold/30 bg-white shrink-0 print:hidden"
+        >
           <h3 className="font-extrabold text-bk-red text-base">Invoice Preview</h3>
           <button
             onClick={triggerClose}
@@ -102,7 +143,7 @@ export default function InvoiceModal({ order, onClose }) {
         </div>
 
         {/* ── Invoice Body ── */}
-        <div className="flex-1 overflow-y-auto">
+        <div id="invoice-modal-body" className="flex-1 overflow-y-auto">
           <div id="invoice-print-area" className="p-6">
             <div className="flex flex-col items-center text-center mb-3">
               <div className="flex justify-center w-full text-center mb-2">
@@ -175,7 +216,10 @@ export default function InvoiceModal({ order, onClose }) {
         </div>
 
         {/* ── Footer ── */}
-        <div className="flex flex-col items-center gap-3 p-4 border-t border-bk-gold/30 bg-white shrink-0 print:hidden">
+        <div
+          id="invoice-modal-footer"
+          className="flex flex-col items-center gap-3 p-4 border-t border-bk-gold/30 bg-white shrink-0 print:hidden"
+        >
 
           {/* Countdown ring — always visible */}
           <div className="flex items-center gap-2">

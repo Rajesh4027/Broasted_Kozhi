@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useBilling } from '../../context/BillingContext';
-import { SlidersHorizontal, Save, Building, Receipt, Phone, FileText, CheckCircle2, Eye, Menu, Database, Download, Upload, HardDrive, Sparkles, RefreshCw } from 'lucide-react';
+import { SlidersHorizontal, Save, Building, Receipt, Phone, FileText, CheckCircle2, Eye, Menu, Database, Download, Upload, HardDrive, Sparkles, RefreshCw, Printer } from 'lucide-react';
 import logo2 from '../../assets/Logo/Logo_2.png';
 
 export default function SettingsPage({ onToggleSidebar, collapsed }) {
@@ -13,11 +13,14 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
     billTitle: storeSettings?.billTitle || 'Bill of Supply',
     currencySymbol: storeSettings?.currencySymbol || '₹',
     footerNote: storeSettings?.footerNote || '',
+    selectedPrinter: storeSettings?.selectedPrinter || '',
   });
 
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [backupMsg, setBackupMsg] = useState('');
-  const [currentAppVersion, setCurrentAppVersion] = useState('1.1.0');
+  const [currentAppVersion, setCurrentAppVersion] = useState('2.0.0');
+  const [printers, setPrinters] = useState([]);
+  const [testPrintStatus, setTestPrintStatus] = useState('');
 
   useEffect(() => {
     if (window.electronAPI?.getAppVersion) {
@@ -25,7 +28,32 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
         if (v) setCurrentAppVersion(v);
       });
     }
+
+    if (window.electronAPI?.getPrinters) {
+      window.electronAPI.getPrinters().then((list) => {
+        if (Array.isArray(list)) setPrinters(list);
+      });
+    }
   }, []);
+
+  const handleTestPrint = async () => {
+    if (window.electronAPI?.printSilent) {
+      setTestPrintStatus('Sending direct print to printer...');
+      try {
+        const res = await window.electronAPI.printSilent({
+          deviceName: form.selectedPrinter || undefined,
+        });
+        if (res?.success) {
+          setTestPrintStatus('Direct print successful! Bill sent to ' + (res.printer || 'Printer'));
+        } else {
+          setTestPrintStatus('Print error: ' + (res?.failureReason || 'Could not reach printer'));
+        }
+      } catch (err) {
+        setTestPrintStatus('Print exception: ' + err.message);
+      }
+      setTimeout(() => setTestPrintStatus(''), 4000);
+    }
+  };
 
   const handleExportBackup = async () => {
     const res = await exportBackup();
@@ -52,6 +80,7 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
         billTitle: storeSettings.billTitle || 'Bill of Supply',
         currencySymbol: storeSettings.currencySymbol || '₹',
         footerNote: storeSettings.footerNote || '',
+        selectedPrinter: storeSettings.selectedPrinter || '',
       });
     }
   }, [storeSettings]);
@@ -207,6 +236,60 @@ export default function SettingsPage({ onToggleSidebar, collapsed }) {
                 placeholder="Thank you for visiting Broasted Kozhi! Come back soon!"
                 className="w-full px-3.5 py-2.5 text-sm bg-bk-cream rounded-xl border border-bk-gold/40 outline-none focus:border-bk-red focus:ring-2 focus:ring-bk-red/20 transition font-medium resize-none"
               />
+            </div>
+          </div>
+
+          {/* Thermal Receipt Printer & Direct Silent Print */}
+          <div className="bg-white p-6 rounded-2xl border border-bk-gold/30 shadow-sm space-y-4">
+            <h3 className="font-extrabold text-bk-charcoal text-base flex items-center gap-2 border-b border-gray-100 pb-3">
+              <Printer size={18} className="text-bk-red" /> Thermal Receipt Printer &amp; Direct Silent Print
+            </h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-bold text-bk-charcoal uppercase tracking-wider block mb-1">
+                  Selected POS Printer
+                </label>
+                <select
+                  value={form.selectedPrinter}
+                  onChange={(e) => handleChange('selectedPrinter', e.target.value)}
+                  className="w-full px-3.5 py-2.5 text-sm bg-bk-cream rounded-xl border border-bk-gold/40 outline-none focus:border-bk-red focus:ring-2 focus:ring-bk-red/20 transition font-medium"
+                >
+                  <option value="">Auto-Detect Thermal Printer (POS80 / Default)</option>
+                  {printers.map((p) => (
+                    <option key={p.name} value={p.name}>
+                      {p.name} {p.isDefault ? '(Default)' : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">
+                  Leave on "Auto-Detect" to automatically route bills to your POS80 thermal receipt printer.
+                </p>
+              </div>
+
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl text-xs flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                  <span>
+                    <strong>Direct Silent Print Enabled:</strong> Clicking "Print" on any bill prints directly without asking for Windows dialog.
+                  </span>
+                </div>
+                {window.electronAPI?.printSilent && (
+                  <button
+                    type="button"
+                    onClick={handleTestPrint}
+                    className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition active:scale-95 shadow-sm"
+                  >
+                    Test Print
+                  </button>
+                )}
+              </div>
+
+              {testPrintStatus && (
+                <div className="text-xs font-bold text-bk-charcoal bg-bk-cream border border-bk-gold/40 p-2.5 rounded-xl text-center animate-fadeSlideUp">
+                  {testPrintStatus}
+                </div>
+              )}
             </div>
           </div>
 

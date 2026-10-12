@@ -79,7 +79,7 @@ ipcMain.handle('print-silent', async (event, options = {}) => {
     let targetDevice = options.deviceName;
     if (!targetDevice) {
       // Auto-detect POS thermal receipt printer or default printer
-      const posPrinter = printers.find((p) => /pos|80|thermal|receipt/i.test(p.name));
+      const posPrinter = printers.find((p) => /pos|80|thermal|receipt|billquick|bill/i.test(p.name));
       const defaultPrinter = printers.find((p) => p.isDefault);
       targetDevice = posPrinter?.name || defaultPrinter?.name || '';
     }
@@ -91,6 +91,7 @@ ipcMain.handle('print-silent', async (event, options = {}) => {
           printBackground: true,
           deviceName: targetDevice || undefined,
           margins: { marginType: 'none' },
+          color: false,
         },
         (success, failureReason) => {
           if (!success) {
