@@ -60,6 +60,55 @@ function createWindow() {
   });
 }
 
+// ── Native Direct Thermal Printing (Silent Print without Windows Dialog) ──
+ipcMain.handle('get-printers', async () => {
+  if (!mainWindow) return [];
+  try {
+    return await mainWindow.webContents.getPrintersAsync();
+  } catch (err) {
+    console.error('Error getting printers:', err);
+    return [];
+  }
+});
+
+ipcMain.handle('print-silent', async (event, options = {}) => {
+  if (!mainWindow) return { success: false, error: 'No active window' };
+
+  try {
+    const printers = await mainWindow.webContents.getPrintersAsync();
+    let targetDevice = options.deviceName;
+    if (!targetDevice) {
+      // Auto-detect POS thermal receipt printer or default printer
+      const posPrinter = printers.find((p) => /pos|80|thermal|receipt/i.test(p.name));
+      const defaultPrinter = printers.find((p) => p.isDefault);
+      targetDevice = posPrinter?.name || defaultPrinter?.name || '';
+    }
+
+    return new Promise((resolve) => {
+      mainWindow.webContents.print(
+        {
+          silent: true,
+          printBackground: true,
+          deviceName: targetDevice || undefined,
+          margins: { marginType: 'none' },
+        },
+        (success, failureReason) => {
+          if (!success) {
+            console.warn('Silent print failed:', failureReason);
+            resolve({ success: false, failureReason });
+          } else {
+            console.log('Silent print completed successfully to:', targetDevice || 'Default');
+            resolve({ success: true, printer: targetDevice });
+          }
+        }
+      );
+    });
+  } catch (err) {
+    console.error('Silent print exception:', err);
+    return { success: false, error: err.message };
+  }
+});
+
 // ── IPC Handlers for Windows Safe File System Data Storage ──
 ipcMain.handle('get-app-data-path', () => {
   return getDbDir();

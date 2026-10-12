@@ -9,6 +9,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   exportBackup: (dataJson) => ipcRenderer.invoke('export-data-backup', dataJson),
   importBackup: () => ipcRenderer.invoke('import-data-backup'),
 
+  // Native Thermal Printing APIs
+  printSilent: (options) => ipcRenderer.invoke('print-silent', options),
+  getPrinters: () => ipcRenderer.invoke('get-printers'),
+
   // Auto Updater APIs
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

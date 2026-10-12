@@ -49,13 +49,30 @@ export default function InvoiceModal({ order, onClose }) {
     return () => clearInterval(timerRef.current);
   }, []);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     setIsPrinting(true);
+
+    if (window.electronAPI?.printSilent) {
+      try {
+        const res = await window.electronAPI.printSilent();
+        if (res?.success) {
+          setPrintDone(true);
+          setTimeout(() => {
+            triggerClose();
+          }, 900);
+          return;
+        }
+      } catch (err) {
+        console.warn('Electron silent print failed, fallback to browser print:', err);
+      }
+    }
+
+    // Browser environment or fallback
     setTimeout(() => {
       window.print();
-      // close invoice preview right after print dialog is dismissed
+      setPrintDone(true);
       triggerClose();
-    }, 900);
+    }, 700);
   };
 
   // Countdown ring values
@@ -77,6 +94,7 @@ export default function InvoiceModal({ order, onClose }) {
 
       {/* ── Slide-in Panel ── */}
       <aside
+        id="invoice-modal-aside"
         className="fixed top-0 right-0 h-full z-50 flex flex-col bg-white border-l border-bk-gold/30 shadow-2xl print:static print:w-full print:border-none print:shadow-none"
         style={{
           width: '420px',
@@ -105,7 +123,7 @@ export default function InvoiceModal({ order, onClose }) {
           <div id="invoice-print-area" className="p-6">
             <div className="flex flex-col items-center text-center mb-3">
               <div className="flex justify-center w-full text-center mb-2">
-                <img src={logo2} alt={storeSettings?.storeName || 'Broasted Kozhi'} className="h-20 w-auto object-contain mx-auto" />
+                <img src={logo2} alt={storeSettings?.storeName || 'Broasted Kozhi'} className="h-12 w-auto object-contain mx-auto" />
               </div>
               {addressLines.map((line, idx) => (
                 <p key={idx} className="text-xs leading-snug text-bk-charcoal/80 text-center">{line}</p>

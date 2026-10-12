@@ -39,7 +39,7 @@ export async function generateInvoicePdf(order, storeSettings = {}) {
     <div id="pdf-invoice-card" style="width: 440px; padding: 28px; background: #ffffff; font-family: 'Plus Jakarta Sans', 'Inter', Arial, sans-serif; color: #2A1B1B; box-sizing: border-box; margin: 0 auto;">
       <!-- Logo centered -->
       <div style="text-align: center; width: 100%; margin-bottom: 12px;">
-        <img src="${logo2}" alt="${storeName}" style="height: 64px; width: auto; display: inline-block; margin: 0 auto;" crossorigin="anonymous" />
+        <img src="${logo2}" alt="${storeName}" style="height: 48px; width: auto; display: inline-block; margin: 0 auto;" crossorigin="anonymous" />
       </div>
 
       <!-- Address -->
